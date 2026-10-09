@@ -7,3 +7,18 @@ dist
 *.log
 .DS_Store
 .idea
+
+# Data Factory — katta fayllar git'ga tushmaydi
+tools/data/
+tools/.venv/
+*.csv
+*.csv.gz
+tools/data/
+*.csv
+*.csv.gz
+
+# Data Factory — katta fayllar git'ga tushmaydi
+tools/data/
+tools/.venv/
+*.csv
+*.csv.gz

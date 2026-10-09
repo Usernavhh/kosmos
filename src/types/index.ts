@@ -1,0 +1,1 @@
+export type Preset = 'potato' | 'low' | 'medium' | 'high' | 'ultra';

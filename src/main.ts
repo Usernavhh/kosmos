@@ -1,43 +1,49 @@
-import * as THREE from 'three';
 import './style.css';
+import { Renderer } from './engine/core/Renderer';
+import { QualityManager } from './engine/core/QualityManager';
+import { DevPanel } from './engine/core/DevPanel';
+import { createScene } from './engine/scene/Scene';
 
-const container = document.getElementById('app')!;
+const params = new URLSearchParams(location.search);
 
-const renderer = new THREE.WebGLRenderer({ antialias: false });
-renderer.setSize(window.innerWidth, window.innerHeight);
-container.appendChild(renderer.domElement);
+const container = document.getElementById('app');
+if (!container) throw new Error('#app topilmadi');
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x05060a);
+const renderer = new Renderer(container);
+const sceneHandle = createScene(renderer.canvas);
+const quality = new QualityManager(params);
+const devPanel = new DevPanel(quality, params);
 
-const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000,
-);
-camera.position.set(0, 0, 3);
-
-const cube = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshBasicMaterial({ color: 0x4ea1ff, wireframe: true }),
-);
-scene.add(cube);
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-const clock = new THREE.Clock();
-
-function loop() {
-  requestAnimationFrame(loop);
-  const dt = clock.getDelta();
-  cube.rotation.x += dt * 0.5;
-  cube.rotation.y += dt * 0.8;
-  renderer.render(scene, camera);
+function applySize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  renderer.setSize(
+    Math.floor(w * quality.renderScale),
+    Math.floor(h * quality.renderScale),
+  );
+  renderer.canvas.style.width = w + 'px';
+  renderer.canvas.style.height = h + 'px';
+  sceneHandle.resize(w, h);
 }
 
-loop();
+window.addEventListener('resize', applySize);
+applySize();
+
+let lastTime = performance.now();
+
+function loop(now: number) {
+  requestAnimationFrame(loop);
+  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+
+  sceneHandle.update(dt);
+
+  const prevScale = quality.renderScale;
+  quality.update(dt);
+  if (prevScale !== quality.renderScale) applySize();
+
+  renderer.render(sceneHandle.scene, sceneHandle.camera);
+  devPanel.update(dt, sceneHandle.getDistance(), sceneHandle.getSpeed());
+}
+
+requestAnimationFrame(loop);

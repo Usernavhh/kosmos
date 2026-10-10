@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "astronomy-engine": "^2.1.19",
     "three": "^0.169.0"
   },
   "devDependencies": {

@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 import { loadStars, type Star } from '../../data/stars';
 import { Controls } from '../core/Controls';
+import { TimeManager } from '../core/TimeManager';
+import { setupTimeKeyboard } from '../core/Keyboard';
+import { createPlanets, type PlanetsHandle } from './Planets';
 
 export interface SceneHandle {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   controls: Controls;
+  time: TimeManager;
   getDistance(): number;
   getSpeed(): number;
   resize(width: number, height: number): void;
@@ -26,20 +30,31 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
     0.01,
     100_000_000,
   );
-  camera.position.set(0, 0, 0);
+  camera.position.set(0, 2000, 8000);
 
   const controls = new Controls(camera, canvas);
+  const time = new TimeManager();
 
+  // Vaqt tugmalarini ulash
+  setupTimeKeyboard(time);
+
+  // H tugmasi — uyga qaytish
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyH') {
-      camera.position.set(0, 0, 0);
+      camera.position.set(0, 2000, 8000);
       console.log('[scene] Uyga qaytdik');
     }
   });
 
   let starsMesh: THREE.Points | null = null;
   let currentSpeed = MIN_SPEED;
+  let planets: PlanetsHandle | null = null;
 
+  // Sayyoralar
+  planets = createPlanets();
+  scene.add(planets.group);
+
+  // Yulduzlar
   loadStars('/data/stars.bin')
     .then((stars) => {
       starsMesh = createStarPoints(stars);
@@ -54,6 +69,7 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
     scene,
     camera,
     controls,
+    time,
 
     getDistance() {
       return camera.position.length();
@@ -73,6 +89,10 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
       const t = Math.min(1, distFromCenter / 50_000);
       currentSpeed = MIN_SPEED * Math.pow(MAX_SPEED / MIN_SPEED, t);
       controls.update(dt, currentSpeed);
+
+      // Vaqt va sayyoralar
+      time.update(dt);
+      if (planets) planets.update(time.now);
     },
   };
 }
@@ -81,7 +101,7 @@ function createStarPoints(stars: Star[]): THREE.Points {
   const positions = new Float32Array(stars.length * 3);
   const colors = new Float32Array(stars.length * 3);
 
-  let n = 0; // haqiqiy yulduzlar soni (NaN/Inf filtrlangan)
+  let n = 0;
 
   for (let i = 0; i < stars.length; i++) {
     const s = stars[i];
@@ -90,7 +110,6 @@ function createStarPoints(stars: Star[]): THREE.Points {
     const py = s.y * r;
     const pz = s.z * r;
 
-    // NaN/Inf bo'lsa, o'tkazib yuborish
     if (
       !Number.isFinite(px) ||
       !Number.isFinite(py) ||
@@ -121,7 +140,7 @@ function createStarPoints(stars: Star[]): THREE.Points {
     n++;
   }
 
-  console.log(`[scene] ${n} yulduz chizishga tayyor (NaN/Inf filtrlangan)`);
+  console.log(`[scene] ${n} yulduz chizishga tayyor`);
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute(

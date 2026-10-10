@@ -12,7 +12,7 @@ if (!container) throw new Error('#app topilmadi');
 const renderer = new Renderer(container);
 const sceneHandle = createScene(renderer.canvas);
 const quality = new QualityManager(params);
-const devPanel = new DevPanel(quality, params);
+const devPanel = new DevPanel(quality, sceneHandle.time, params);
 
 function applySize() {
   const w = window.innerWidth;

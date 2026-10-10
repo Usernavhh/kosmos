@@ -1,11 +1,16 @@
 import type { QualityManager } from './QualityManager';
+import type { TimeManager } from './TimeManager';
 
 export class DevPanel {
   private el: HTMLDivElement;
   private enabled: boolean;
   private acc = 0;
 
-  constructor(private quality: QualityManager, params: URLSearchParams) {
+  constructor(
+    private quality: QualityManager,
+    private time: TimeManager,
+    params: URLSearchParams,
+  ) {
     this.enabled = params.get('stats') === '1';
     this.el = document.createElement('div');
     this.el.className = 'dev-panel';
@@ -27,11 +32,9 @@ export class DevPanel {
     const d = Number.isFinite(distance) ? distance.toFixed(0) : '?';
     const s = Number.isFinite(speed) ? speed.toFixed(0) : '?';
 
-    this.el.textContent =
+    this.el.innerHTML =
       `FPS ${this.quality.fps.toFixed(0)} | ` +
-      `preset ${this.quality.preset} | ` +
-      `dist ${d} | ` +
-      `speed ${s} u/s | ` +
-      `RAM ${memText}`;
+      `dist ${d} | speed ${s} u/s | RAM ${memText}<br>` +
+      `⏱ ${this.time.format()} | ${this.time.formatSpeed()}`;
   }
 }

@@ -18,7 +18,13 @@ export interface SceneHandle {
 
 const MIN_SPEED = 10;
 const MAX_SPEED = 100_000;
-const PARSEC_SCALE = 100;
+
+// 1 parsek = 500 000 birlik.
+// Shunda yaqin yulduz (~1 pc) Neptun orbitasidan (150 000 birlik) uzoqroq.
+const PARSEC_SCALE = 500_000;
+
+// Boshlang'ich kamera pozitsiyasi — Quyosh sistemasini ko'rish uchun
+const HOME_POSITION = new THREE.Vector3(0, 20000, 60000);
 
 export function createScene(canvas: HTMLCanvasElement): SceneHandle {
   const scene = new THREE.Scene();
@@ -30,18 +36,16 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
     0.01,
     100_000_000,
   );
-  camera.position.set(0, 2000, 8000);
+  camera.position.copy(HOME_POSITION);
 
   const controls = new Controls(camera, canvas);
   const time = new TimeManager();
 
-  // Vaqt tugmalarini ulash
   setupTimeKeyboard(time);
 
-  // H tugmasi — uyga qaytish
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyH') {
-      camera.position.set(0, 2000, 8000);
+      camera.position.copy(HOME_POSITION);
       console.log('[scene] Uyga qaytdik');
     }
   });
@@ -50,11 +54,9 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
   let currentSpeed = MIN_SPEED;
   let planets: PlanetsHandle | null = null;
 
-  // Sayyoralar
   planets = createPlanets();
   scene.add(planets.group);
 
-  // Yulduzlar
   loadStars('/data/stars.bin')
     .then((stars) => {
       starsMesh = createStarPoints(stars);
@@ -90,7 +92,6 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
       currentSpeed = MIN_SPEED * Math.pow(MAX_SPEED / MIN_SPEED, t);
       controls.update(dt, currentSpeed);
 
-      // Vaqt va sayyoralar
       time.update(dt);
       if (planets) planets.update(time.now);
     },

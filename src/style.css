@@ -1,12 +1,6 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-html,
-body,
-#app {
+html, body, #app {
   width: 100%;
   height: 100%;
   background: #05060a;
@@ -15,9 +9,7 @@ body,
   overflow: hidden;
 }
 
-canvas {
-  display: block;
-}
+canvas { display: block; }
 
 .dev-panel {
   position: fixed;
@@ -32,4 +24,69 @@ canvas {
   color: #9ecbff;
   pointer-events: none;
   z-index: 100;
+  line-height: 1.5;
+}
+
+.planet-info {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  min-width: 240px;
+  padding: 16px 20px;
+  background: rgba(8, 12, 24, 0.85);
+  border: 1px solid rgba(120, 180, 255, 0.5);
+  border-radius: 10px;
+  color: #e8eefc;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.planet-info h2 {
+  margin: 0 0 2px 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #9ecbff;
+  letter-spacing: 0.5px;
+}
+
+.planet-info .pi-en {
+  font-size: 12px;
+  color: #7a90b8;
+  margin-bottom: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.planet-info table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.planet-info table td {
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(120, 180, 255, 0.12);
+}
+
+.planet-info table td:first-child {
+  color: #7a90b8;
+  width: 90px;
+}
+
+.planet-info table td:last-child {
+  text-align: right;
+  color: #e8eefc;
+  font-family: ui-monospace, monospace;
+}
+
+.planet-info .pi-hint {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(120, 180, 255, 0.2);
+  font-size: 11px;
+  color: #5a7090;
+  font-family: ui-monospace, monospace;
 }

@@ -2,13 +2,10 @@ import * as THREE from 'three';
 
 export class Controls {
   private keys = new Set<string>();
-  private mouseX = 0;
-  private mouseY = 0;
   private dragging = false;
   private lastMouseX = 0;
   private lastMouseY = 0;
 
-  // Burchaklar (radian)
   private yaw = 0;
   private pitch = 0;
 
@@ -20,12 +17,9 @@ export class Controls {
   ) {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
-
     canvas.addEventListener('mousedown', this.onMouseDown);
     window.addEventListener('mouseup', this.onMouseUp);
     window.addEventListener('mousemove', this.onMouseMove);
-
-    // Touch (mobil)
     canvas.addEventListener('touchstart', this.onTouchStart, { passive: false });
     window.addEventListener('touchend', this.onTouchEnd);
     window.addEventListener('touchmove', this.onTouchMove, { passive: false });
@@ -83,23 +77,24 @@ export class Controls {
     const sens = 0.003;
     this.yaw -= dx * sens;
     this.pitch -= dy * sens;
-    // Cheklash: pitch -85° ... +85°
     this.pitch = Math.max(-1.48, Math.min(1.48, this.pitch));
   }
 
-  /**
-   * Har kadr chaqiriladi. Kamerani harakatlantiradi.
-   * speed — joriy tezlik (birlik/sekund).
-   */
+  /** Kamera quaternion'idan yaw/pitch ni qayta o'qish (flyTo'dan keyin) */
+  syncFromCamera() {
+    const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+    euler.setFromQuaternion(this.camera.quaternion);
+    this.pitch = Math.max(-1.48, Math.min(1.48, euler.x));
+    this.yaw = euler.y;
+  }
+
   update(dt: number, speed: number) {
     if (!this.enabled) return;
 
-    // Kamera yo'nalishini yaw/pitch bo'yicha yangilash
     const q = new THREE.Quaternion();
     q.setFromEuler(new THREE.Euler(this.pitch, this.yaw, 0, 'YXZ'));
     this.camera.quaternion.copy(q);
 
-    // Harakat vektori
     const dir = new THREE.Vector3();
     if (this.keys.has('KeyW')) dir.z -= 1;
     if (this.keys.has('KeyS')) dir.z += 1;
@@ -114,16 +109,5 @@ export class Controls {
       const move = dir.multiplyScalar(speed * dt);
       this.camera.position.add(move);
     }
-  }
-
-  dispose() {
-    window.removeEventListener('keydown', this.onKeyDown);
-    window.removeEventListener('keyup', this.onKeyUp);
-    this.canvas.removeEventListener('mousedown', this.onMouseDown);
-    window.removeEventListener('mouseup', this.onMouseUp);
-    window.removeEventListener('mousemove', this.onMouseMove);
-    this.canvas.removeEventListener('touchstart', this.onTouchStart);
-    window.removeEventListener('touchend', this.onTouchEnd);
-    window.removeEventListener('touchmove', this.onTouchMove);
   }
 }

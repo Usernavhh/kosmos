@@ -3,14 +3,16 @@ import { Renderer } from './engine/core/Renderer';
 import { QualityManager } from './engine/core/QualityManager';
 import { DevPanel } from './engine/core/DevPanel';
 import { createScene } from './engine/scene/Scene';
+import { PlanetInfo } from './ui/PlanetInfo';
 
 const params = new URLSearchParams(location.search);
 
 const container = document.getElementById('app');
 if (!container) throw new Error('#app topilmadi');
 
+const info = new PlanetInfo();
 const renderer = new Renderer(container);
-const sceneHandle = createScene(renderer.canvas);
+const sceneHandle = createScene(renderer.canvas, info);
 const quality = new QualityManager(params);
 const devPanel = new DevPanel(quality, sceneHandle.time, params);
 

@@ -11,6 +11,8 @@ import { setupTimeKeyboard } from '../core/Keyboard';
 import { CameraFly } from '../core/CameraFly';
 import { createPlanets, type PlanetsHandle, PLANETS_META } from './Planets';
 import { createStarLabels, type StarLabelsHandle } from './StarLabels';
+import { createAsteroids, type AsteroidsHandle } from './Asteroids';
+import { createComets, type CometsHandle } from './Comets';
 import type { PlanetInfo } from '../../ui/PlanetInfo';
 import type { StarInfo } from '../../ui/StarInfo';
 
@@ -55,9 +57,19 @@ export function createScene(
 
   let currentIndex: number | null = null;
 
+  // Sayyoralar
   const planets: PlanetsHandle = createPlanets();
   scene.add(planets.group);
 
+  // Asteroidlar
+  const asteroids: AsteroidsHandle = createAsteroids();
+  scene.add(asteroids.group);
+
+  // Kometalar
+  const comets: CometsHandle = createComets();
+  scene.add(comets.group);
+
+  // Yulduzlar
   let starsMesh: THREE.Points | null = null;
   let currentSpeed = MIN_SPEED;
   let starLabels: StarLabelsHandle | null = null;
@@ -88,8 +100,7 @@ export function createScene(
     if (dir.lengthSq() < 1) dir.set(0, 0.3, 1);
     dir.normalize();
 
-    const viewDist = radius * 5;
-    const targetPos = pos.clone().add(dir.multiplyScalar(viewDist));
+    const targetPos = pos.clone().add(dir.multiplyScalar(radius * 5));
     const dist = camera.position.distanceTo(targetPos);
     const duration = Math.min(4, Math.max(1.5, 0.5 + Math.log10(dist) * 0.5));
 
@@ -139,33 +150,21 @@ export function createScene(
     if (e.code === 'KeyH') goHome();
   });
 
-  // ========== Sichqoncha bosish ==========
-  // Avval sayyoraga, keyin yulduzga tekshiramiz.
   canvas.addEventListener('click', (e) => {
-    // 1) Sayyora
     const planetHit = planets.hitTest(camera, e.clientX, e.clientY, 40);
     if (planetHit) {
       starInfo.hide();
       planetInfo.show(planetHit.meta);
-      // Sayyora indeksini yangilash (flyTo uchun)
       const idx = PLANETS_META.findIndex((p) => p.body === planetHit.body);
       if (idx >= 0) currentIndex = idx;
-      console.log(`[scene] Sayyora bosildi: ${planetHit.meta.name}`);
       return;
     }
 
-    // 2) Yulduz
     if (!starLabels) return;
-    const hit: NamedStar | null = starLabels.hitTest(
-      camera,
-      e.clientX,
-      e.clientY,
-      40,
-    );
+    const hit: NamedStar | null = starLabels.hitTest(camera, e.clientX, e.clientY, 40);
     if (hit) {
       starInfo.show(hit);
       planetInfo.hide();
-      console.log(`[scene] Yulduz bosildi: ${hit.nameUz} (${hit.name})`);
     }
   });
 
@@ -198,7 +197,11 @@ export function createScene(
         currentSpeed = MIN_SPEED * Math.pow(MAX_SPEED / MIN_SPEED, t);
         controls.update(dt, currentSpeed);
         time.update(dt);
-        planets.update(time.now);
+
+        const now = time.now;
+        planets.update(now);
+        asteroids.update(now);
+        comets.update(now);
       }
     },
   };
@@ -212,9 +215,7 @@ function createStarPoints(stars: Star[]): THREE.Points {
   for (let i = 0; i < stars.length; i++) {
     const s = stars[i];
     const r = s.dist * PARSEC_SCALE;
-    const px = s.x * r;
-    const py = s.y * r;
-    const pz = s.z * r;
+    const px = s.x * r, py = s.y * r, pz = s.z * r;
     if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)) continue;
 
     positions[n * 3 + 0] = px;

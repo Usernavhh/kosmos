@@ -27,6 +27,34 @@ export const PLANETS_META: PlanetMeta[] = [
   { name: 'Neptun', nameEn: 'Neptune', body: Body.Neptune, radius: 240, realRadiusKm: 24622, distanceAU: 30.05, periodDays: 60190, temperature: '-201°C', texture: '/textures/neptunemap.jpg' },
 ];
 
+// ========== Yo'ldoshlar (sayyora oylari) ==========
+interface MoonDef {
+  name: string;
+  nameUz: string;
+  parentBody: Body;
+  /** Orbita radiusi sahnada (parent radiusidan necha marta) */
+  orbitScale: number;
+  radius: number;
+  periodDays: number;
+  color: number;
+  phase: number;
+}
+
+const MOONS: MoonDef[] = [
+  // Mars
+  { name: 'Phobos', nameUz: 'Fobos', parentBody: Body.Mars, orbitScale: 3.5, radius: 8, periodDays: 0.319, color: 0x8a8070, phase: 0 },
+  { name: 'Deimos', nameUz: 'Deymos', parentBody: Body.Mars, orbitScale: 5.5, radius: 6, periodDays: 1.263, color: 0x9a8877, phase: 2 },
+  // Yupiter
+  { name: 'Io', nameUz: 'Io', parentBody: Body.Jupiter, orbitScale: 2.5, radius: 20, periodDays: 1.769, color: 0xffdd88, phase: 0 },
+  { name: 'Europa', nameUz: 'Yevropa', parentBody: Body.Jupiter, orbitScale: 3.2, radius: 18, periodDays: 3.551, color: 0xddddcc, phase: 1 },
+  { name: 'Ganymede', nameUz: 'Ganimed', parentBody: Body.Jupiter, orbitScale: 4.0, radius: 26, periodDays: 7.155, color: 0xbb9988, phase: 2 },
+  { name: 'Callisto', nameUz: 'Kallisto', parentBody: Body.Jupiter, orbitScale: 5.0, radius: 24, periodDays: 16.689, color: 0x776655, phase: 3 },
+  // Saturn
+  { name: 'Titan', nameUz: 'Titan', parentBody: Body.Saturn, orbitScale: 4.0, radius: 22, periodDays: 15.945, color: 0xdd9955, phase: 0 },
+  // Neptun
+  { name: 'Triton', nameUz: 'Triton', parentBody: Body.Neptune, orbitScale: 3.5, radius: 16, periodDays: 5.877, color: 0xccddee, phase: 0 },
+];
+
 const SUN_RADIUS = 800;
 const MOON_DISTANCE = 600;
 const MOON_RADIUS = 40;
@@ -51,10 +79,17 @@ interface PlanetInstance {
   ring?: THREE.Mesh;
 }
 
+interface MoonInstance {
+  mesh: THREE.Mesh;
+  def: MoonDef;
+  parentRadius: number;
+}
+
 export function createPlanets(): PlanetsHandle {
   const group = new THREE.Group();
   const loader = new THREE.TextureLoader();
   const instances: PlanetInstance[] = [];
+  const moonInstances: MoonInstance[] = [];
 
   const sunLight = new THREE.PointLight(0xffffff, 2.5, 0, 0);
   group.add(sunLight);
@@ -77,7 +112,7 @@ export function createPlanets(): PlanetsHandle {
   );
   group.add(sunGlow);
 
-  // ========== Yer uchun maxsus shader ==========
+  // ========== Yer maxsus shader ==========
   const earthDayTex = loader.load('/textures/earth_day.jpg');
   earthDayTex.colorSpace = THREE.SRGBColorSpace;
   const earthNightTex = loader.load('/textures/earth_night.png');
@@ -106,12 +141,10 @@ export function createPlanets(): PlanetsHandle {
       uniform vec3 sunDirection;
       varying vec2 vUv;
       varying vec3 vWorldNormal;
-
       void main() {
         vec3 dayColor = texture2D(dayTexture, vUv).rgb;
         vec3 nightColor = texture2D(nightTexture, vUv).rgb;
         float d = dot(normalize(vWorldNormal), normalize(sunDirection));
-        // Yumshoq o'tish zonasi
         float dayMix = smoothstep(-0.12, 0.12, d);
         vec3 color = mix(nightColor * 1.8, dayColor, dayMix);
         gl_FragColor = vec4(color, 1.0);
@@ -126,7 +159,6 @@ export function createPlanets(): PlanetsHandle {
     let mesh: THREE.Mesh;
 
     if (def.body === Body.Earth) {
-      // Yer — maxsus shader
       mesh = new THREE.Mesh(new THREE.SphereGeometry(def.radius, 64, 48), earthMat);
       earthMesh = mesh;
     } else {
@@ -139,7 +171,6 @@ export function createPlanets(): PlanetsHandle {
     }
     group.add(mesh);
 
-    // Orbita
     const orbitPoints = computeOrbitPoints(def.body, 256, def.periodDays);
     const orbit = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(orbitPoints),
@@ -147,7 +178,6 @@ export function createPlanets(): PlanetsHandle {
     );
     group.add(orbit);
 
-    // Saturn halqasi
     let ring: THREE.Mesh | undefined;
     if (def.ring) {
       ring = new THREE.Mesh(
@@ -164,7 +194,7 @@ export function createPlanets(): PlanetsHandle {
     instances.push({ mesh, meta: def, ring });
   }
 
-  // ========== Yer atmosferasi ==========
+  // ========== Yer atmosferasi + bulutlar ==========
   const earthAtmosphere = new THREE.Mesh(
     new THREE.SphereGeometry(EARTH_RADIUS * 1.15, 64, 48),
     new THREE.MeshBasicMaterial({
@@ -174,29 +204,39 @@ export function createPlanets(): PlanetsHandle {
   );
   group.add(earthAtmosphere);
 
-  // ========== Yer bulutlari ==========
   const cloudsTex = loader.load('/textures/earth_clouds.png');
   cloudsTex.colorSpace = THREE.SRGBColorSpace;
   const earthClouds = new THREE.Mesh(
     new THREE.SphereGeometry(EARTH_RADIUS * 1.012, 64, 48),
     new THREE.MeshPhongMaterial({
-      map: cloudsTex,
-      transparent: true,
-      opacity: 0.85,
-      depthWrite: false,
-      shininess: 1,
+      map: cloudsTex, transparent: true, opacity: 0.85,
+      depthWrite: false, shininess: 1,
     }),
   );
   group.add(earthClouds);
 
-  // ========== Oy ==========
+  // ========== Oy (Yer yo'ldoshi) ==========
   const moonTex = loader.load('/textures/moon.jpg');
   moonTex.colorSpace = THREE.SRGBColorSpace;
-  const moon = new THREE.Mesh(
+  const earthMoon = new THREE.Mesh(
     new THREE.SphereGeometry(MOON_RADIUS, 32, 24),
     new THREE.MeshPhongMaterial({ map: moonTex, shininess: 2 }),
   );
-  group.add(moon);
+  group.add(earthMoon);
+
+  // ========== Boshqa yo'ldoshlar ==========
+  for (const def of MOONS) {
+    const parentMeta = PLANETS_META.find((p) => p.body === def.parentBody);
+    if (!parentMeta) continue;
+
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(def.radius, 20, 14),
+      new THREE.MeshPhongMaterial({ color: def.color, shininess: 3 }),
+    );
+    group.add(mesh);
+
+    moonInstances.push({ mesh, def, parentRadius: parentMeta.radius });
+  }
 
   // ========== Update ==========
   function update(date: Date) {
@@ -215,20 +255,35 @@ export function createPlanets(): PlanetsHandle {
 
     if (earthMesh) {
       earthAtmosphere.position.copy(earthMesh.position);
-
-      // Bulutlar Yer bilan birga, sekinroq aylanadi
       earthClouds.position.copy(earthMesh.position);
       earthClouds.rotation.y += 0.006;
 
-      // Quyosh yo'nalishi (Yer pozitsiyasidan Quyoshga)
       const sunDir = earthMesh.position.clone().negate().normalize();
       earthUniforms.sunDirection.value.copy(sunDir);
 
       // Oy
       const mv = GeoMoon(date);
       const dir = new THREE.Vector3(mv.x, mv.z, -mv.y).normalize();
-      moon.position.copy(earthMesh.position).addScaledVector(dir, MOON_DISTANCE);
-      moon.rotation.y += 0.005;
+      earthMoon.position.copy(earthMesh.position).addScaledVector(dir, MOON_DISTANCE);
+      earthMoon.rotation.y += 0.005;
+    }
+
+    // Boshqa yo'ldoshlar
+    const daysSinceJ2000 =
+      (date.getTime() - Date.UTC(2000, 0, 1, 12)) / 86400_000;
+
+    for (const inst of moonInstances) {
+      const parentInst = instances.find((p) => p.meta.body === inst.def.parentBody);
+      if (!parentInst) continue;
+
+      const angle = inst.def.phase + (2 * Math.PI * daysSinceJ2000) / inst.def.periodDays;
+      const radius = inst.parentRadius * inst.def.orbitScale;
+
+      inst.mesh.position.set(
+        parentInst.mesh.position.x + Math.cos(angle) * radius,
+        parentInst.mesh.position.y + Math.sin(angle) * radius * 0.3,
+        parentInst.mesh.position.z + Math.sin(angle) * radius * 0.9,
+      );
     }
   }
 
@@ -242,7 +297,6 @@ export function createPlanets(): PlanetsHandle {
     return inst?.meta.radius ?? 100;
   }
 
-  // ========== Hit test ==========
   const projected = new THREE.Vector3();
 
   function hitTest(
@@ -265,11 +319,9 @@ export function createPlanets(): PlanetsHandle {
 
       const sx = (projected.x * 0.5 + 0.5) * w;
       const sy = (-projected.y * 0.5 + 0.5) * h;
-
       const cameraDist = camera.position.distanceTo(inst.mesh.position);
       const screenRadius = (inst.meta.radius / cameraDist) * fovFactor;
       const tolerance = Math.max(screenRadius, maxPixels);
-
       const dx = sx - clickX;
       const dy = sy - clickY;
       const d = Math.sqrt(dx * dx + dy * dy);

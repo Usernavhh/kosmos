@@ -13,8 +13,10 @@ import { createPlanets, type PlanetsHandle, PLANETS_META } from './Planets';
 import { createStarLabels, type StarLabelsHandle } from './StarLabels';
 import { createAsteroids, type AsteroidsHandle } from './Asteroids';
 import { createComets, type CometsHandle } from './Comets';
+import { createSatellites, type SatellitesHandle } from './Satellites';
 import type { PlanetInfo } from '../../ui/PlanetInfo';
 import type { StarInfo } from '../../ui/StarInfo';
+import type { SatInfo } from '../../ui/SatInfo';
 
 export interface SceneHandle {
   scene: THREE.Scene;
@@ -36,16 +38,14 @@ export function createScene(
   canvas: HTMLCanvasElement,
   planetInfo: PlanetInfo,
   starInfo: StarInfo,
+  satInfo: SatInfo,
   controlsCallbacks: ControlsCallbacks = {},
 ): SceneHandle {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x05060a);
 
   const camera = new THREE.PerspectiveCamera(
-    60,
-    window.innerWidth / window.innerHeight,
-    0.01,
-    100_000_000,
+    60, window.innerWidth / window.innerHeight, 0.01, 100_000_000,
   );
   camera.position.copy(HOME_POSITION);
 
@@ -57,19 +57,18 @@ export function createScene(
 
   let currentIndex: number | null = null;
 
-  // Sayyoralar
   const planets: PlanetsHandle = createPlanets();
   scene.add(planets.group);
 
-  // Asteroidlar
   const asteroids: AsteroidsHandle = createAsteroids();
   scene.add(asteroids.group);
 
-  // Kometalar
   const comets: CometsHandle = createComets();
   scene.add(comets.group);
 
-  // Yulduzlar
+  const satellites: SatellitesHandle = createSatellites();
+  scene.add(satellites.group);
+
   let starsMesh: THREE.Points | null = null;
   let currentSpeed = MIN_SPEED;
   let starLabels: StarLabelsHandle | null = null;
@@ -107,20 +106,19 @@ export function createScene(
     fly.start(camera, targetPos, pos, duration);
     currentIndex = index;
     starInfo.hide();
+    satInfo.hide();
     planetInfo.show(meta);
   }
 
   function nextPlanet() {
-    const next =
-      currentIndex === null ? 0 : (currentIndex + 1) % PLANETS_META.length;
+    const next = currentIndex === null ? 0 : (currentIndex + 1) % PLANETS_META.length;
     flyToIndex(next);
   }
 
   function prevPlanet() {
-    const prev =
-      currentIndex === null
-        ? PLANETS_META.length - 1
-        : (currentIndex - 1 + PLANETS_META.length) % PLANETS_META.length;
+    const prev = currentIndex === null
+      ? PLANETS_META.length - 1
+      : (currentIndex - 1 + PLANETS_META.length) % PLANETS_META.length;
     flyToIndex(prev);
   }
 
@@ -135,52 +133,56 @@ export function createScene(
     currentIndex = null;
     planetInfo.hide();
     starInfo.hide();
+    satInfo.hide();
   }
 
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'Tab') {
-      e.preventDefault();
-      nextPlanet();
-    }
+    if (e.code === 'Tab') { e.preventDefault(); nextPlanet(); }
     if (e.code === 'KeyK') prevPlanet();
     if (e.code === 'Escape') {
       planetInfo.hide();
       starInfo.hide();
+      satInfo.hide();
     }
     if (e.code === 'KeyH') goHome();
   });
 
   canvas.addEventListener('click', (e) => {
+    // 1) Sayyora
     const planetHit = planets.hitTest(camera, e.clientX, e.clientY, 40);
     if (planetHit) {
       starInfo.hide();
+      satInfo.hide();
       planetInfo.show(planetHit.meta);
       const idx = PLANETS_META.findIndex((p) => p.body === planetHit.body);
       if (idx >= 0) currentIndex = idx;
       return;
     }
 
+    // 2) Yo'ldosh
+    const satHit = satellites.hitTest(camera, e.clientX, e.clientY, 20);
+    if (satHit) {
+      planetInfo.hide();
+      starInfo.hide();
+      satInfo.show(satHit);
+      return;
+    }
+
+    // 3) Yulduz
     if (!starLabels) return;
     const hit: NamedStar | null = starLabels.hitTest(camera, e.clientX, e.clientY, 40);
     if (hit) {
-      starInfo.show(hit);
       planetInfo.hide();
+      satInfo.hide();
+      starInfo.show(hit);
     }
   });
 
   return {
-    scene,
-    camera,
-    controls,
-    time,
+    scene, camera, controls, time,
 
-    getDistance() {
-      return camera.position.length();
-    },
-
-    getSpeed() {
-      return currentSpeed;
-    },
+    getDistance() { return camera.position.length(); },
+    getSpeed() { return currentSpeed; },
 
     resize(width, height) {
       camera.aspect = width / height;
@@ -202,6 +204,7 @@ export function createScene(
         planets.update(now);
         asteroids.update(now);
         comets.update(now);
+        satellites.update(now);
       }
     },
   };

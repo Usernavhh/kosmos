@@ -29,6 +29,19 @@
       ]
     },
     {
+      "name": "Ursa Minor",
+      "nameUz": "Kichik Ayiq",
+      "lines": [
+        ["Polaris", "Yildun"],
+        ["Yildun", "Epsilon Ursae Minoris"],
+        ["Epsilon Ursae Minoris", "Zeta Ursae Minoris"],
+        ["Zeta Ursae Minoris", "Eta Ursae Minoris"],
+        ["Eta Ursae Minoris", "Pherkad"],
+        ["Pherkad", "Kochab"],
+        ["Kochab", "Zeta Ursae Minoris"]
+      ]
+    },
+    {
       "name": "Cassiopeia",
       "nameUz": "Kassiopeya",
       "lines": [
@@ -49,6 +62,28 @@
       ]
     },
     {
+      "name": "Lyra",
+      "nameUz": "Lira",
+      "lines": [
+        ["Vega", "Sheliak"],
+        ["Sheliak", "Sulafat"],
+        ["Sulafat", "Delta Lyrae"],
+        ["Delta Lyrae", "Zeta Lyrae"],
+        ["Zeta Lyrae", "Vega"]
+      ]
+    },
+    {
+      "name": "Aquila",
+      "nameUz": "Burgut",
+      "lines": [
+        ["Altair", "Tarazed"],
+        ["Altair", "Alshain"],
+        ["Altair", "Delta Aquilae"],
+        ["Delta Aquilae", "Zeta Aquilae"],
+        ["Zeta Aquilae", "Theta Aquilae"]
+      ]
+    },
+    {
       "name": "Scorpius",
       "nameUz": "Aqrab",
       "lines": [
@@ -58,6 +93,127 @@
         ["Antares", "Tau Scorpii"],
         ["Tau Scorpii", "Epsilon Scorpii"],
         ["Epsilon Scorpii", "Shaula"]
+      ]
+    },
+    {
+      "name": "Leo",
+      "nameUz": "Arslon",
+      "lines": [
+        ["Regulus", "Denebola"],
+        ["Regulus", "Algieba"],
+        ["Algieba", "Zosma"],
+        ["Zosma", "Denebola"],
+        ["Regulus", "Zavijava"],
+        ["Algieba", "Adhafera"]
+      ]
+    },
+    {
+      "name": "Taurus",
+      "nameUz": "Savr",
+      "lines": [
+        ["Aldebaran", "Elnath"],
+        ["Aldebaran", "Theta Tauri"],
+        ["Theta Tauri", "Gamma Tauri"],
+        ["Gamma Tauri", "Lambda Tauri"],
+        ["Lambda Tauri", "Epsilon Tauri"]
+      ]
+    },
+    {
+      "name": "Gemini",
+      "nameUz": "Javzo (Egizaklar)",
+      "lines": [
+        ["Castor", "Pollux"],
+        ["Castor", "Mebsuta"],
+        ["Pollux", "Alhena"],
+        ["Alhena", "Wasat"],
+        ["Wasat", "Mebsuta"],
+        ["Wasat", "Alzirr"]
+      ]
+    },
+    {
+      "name": "Canis Major",
+      "nameUz": "Katta It",
+      "lines": [
+        ["Sirius", "Mirzam"],
+        ["Mirzam", "Adhara"],
+        ["Adhara", "Wezen"],
+        ["Wezen", "Aludra"],
+        ["Wezen", "Sirius"],
+        ["Sirius", "Adhara"]
+      ]
+    },
+    {
+      "name": "Canis Minor",
+      "nameUz": "Kichik It",
+      "lines": [
+        ["Procyon", "Gomeisa"]
+      ]
+    },
+    {
+      "name": "Bootes",
+      "nameUz": "Cho'pon",
+      "lines": [
+        ["Arcturus", "Izar"],
+        ["Izar", "Seginus"],
+        ["Seginus", "Nekkar"],
+        ["Nekkar", "Seginus"],
+        ["Arcturus", "Muphrid"]
+      ]
+    },
+    {
+      "name": "Virgo",
+      "nameUz": "Sunbula",
+      "lines": [
+        ["Spica", "Zavijava"],
+        ["Zavijava", "Vindemiatrix"],
+        ["Spica", "Porrima"],
+        ["Porrima", "Vindemiatrix"]
+      ]
+    },
+    {
+      "name": "Crux",
+      "nameUz": "Janubiy Xoch",
+      "lines": [
+        ["Acrux", "Mimosa"],
+        ["Gacrux", "Imai"]
+      ]
+    },
+    {
+      "name": "Pegasus",
+      "nameUz": "Pegas",
+      "lines": [
+        ["Markab", "Scheat"],
+        ["Scheat", "Alpheratz"],
+        ["Alpheratz", "Algenib"],
+        ["Algenib", "Markab"]
+      ]
+    },
+    {
+      "name": "Andromeda",
+      "nameUz": "Andromeda",
+      "lines": [
+        ["Alpheratz", "Mirach"],
+        ["Mirach", "Almach"]
+      ]
+    },
+    {
+      "name": "Perseus",
+      "nameUz": "Persey",
+      "lines": [
+        ["Mirfak", "Algol"],
+        ["Algol", "Zeta Persei"],
+        ["Mirfak", "Epsilon Persei"]
+      ]
+    },
+    {
+      "name": "Auriga",
+      "nameUz": "Aravachi",
+      "lines": [
+        ["Capella", "Menkalinan"],
+        ["Menkalinan", "Mahasim"],
+        ["Mahasim", "Hassaleh"],
+        ["Hassaleh", "Capella"],
+        ["Capella", "Elnath"]
       ]
     }
   ]

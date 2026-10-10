@@ -5,6 +5,7 @@ import { DevPanel } from './engine/core/DevPanel';
 import { createScene } from './engine/scene/Scene';
 import { PlanetInfo } from './ui/PlanetInfo';
 import { StarInfo } from './ui/StarInfo';
+import { SatInfo } from './ui/SatInfo';
 import { TurboSelector } from './ui/TurboSelector';
 
 const params = new URLSearchParams(location.search);
@@ -14,6 +15,7 @@ if (!container) throw new Error('#app topilmadi');
 
 const planetInfo = new PlanetInfo();
 const starInfo = new StarInfo();
+const satInfo = new SatInfo();
 const turboSelector = new TurboSelector();
 
 const renderer = new Renderer(container);
@@ -22,6 +24,7 @@ const sceneHandle = createScene(
   renderer.canvas,
   planetInfo,
   starInfo,
+  satInfo,
   {
     onTurboShow: (i) => turboSelector.show(i),
     onTurboSelect: (i) => turboSelector.update(i),

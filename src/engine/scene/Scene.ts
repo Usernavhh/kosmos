@@ -1,7 +1,11 @@
 import * as THREE from 'three';
 import { loadStars, type Star } from '../../data/stars';
-import { loadStarNames, loadConstellations, type NamedStar } from '../../data/starNames';
-import { Controls } from '../core/Controls';
+import {
+  loadStarNames,
+  loadConstellations,
+  type NamedStar,
+} from '../../data/starNames';
+import { Controls, type ControlsCallbacks } from '../core/Controls';
 import { TimeManager } from '../core/TimeManager';
 import { setupTimeKeyboard } from '../core/Keyboard';
 import { CameraFly } from '../core/CameraFly';
@@ -30,6 +34,7 @@ export function createScene(
   canvas: HTMLCanvasElement,
   planetInfo: PlanetInfo,
   starInfo: StarInfo,
+  controlsCallbacks: ControlsCallbacks = {},
 ): SceneHandle {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x05060a);
@@ -42,7 +47,7 @@ export function createScene(
   );
   camera.position.copy(HOME_POSITION);
 
-  const controls = new Controls(camera, canvas);
+  const controls = new Controls(camera, canvas, controlsCallbacks);
   const time = new TimeManager();
   const fly = new CameraFly();
 
@@ -95,14 +100,16 @@ export function createScene(
   }
 
   function nextPlanet() {
-    const next = currentIndex === null ? 0 : (currentIndex + 1) % PLANETS_META.length;
+    const next =
+      currentIndex === null ? 0 : (currentIndex + 1) % PLANETS_META.length;
     flyToIndex(next);
   }
 
   function prevPlanet() {
-    const prev = currentIndex === null
-      ? PLANETS_META.length - 1
-      : (currentIndex - 1 + PLANETS_META.length) % PLANETS_META.length;
+    const prev =
+      currentIndex === null
+        ? PLANETS_META.length - 1
+        : (currentIndex - 1 + PLANETS_META.length) % PLANETS_META.length;
     flyToIndex(prev);
   }
 
@@ -117,34 +124,70 @@ export function createScene(
     currentIndex = null;
     planetInfo.hide();
     starInfo.hide();
-    console.log('[scene] Uyga qaytdik');
   }
 
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'Tab') { e.preventDefault(); nextPlanet(); }
+    if (e.code === 'Tab') {
+      e.preventDefault();
+      nextPlanet();
+    }
     if (e.code === 'KeyK') prevPlanet();
-    if (e.code === 'Escape') { planetInfo.hide(); starInfo.hide(); }
+    if (e.code === 'Escape') {
+      planetInfo.hide();
+      starInfo.hide();
+    }
     if (e.code === 'KeyH') goHome();
   });
 
+  // ========== Sichqoncha bosish ==========
+  // Avval sayyoraga, keyin yulduzga tekshiramiz.
   canvas.addEventListener('click', (e) => {
+    // 1) Sayyora
+    const planetHit = planets.hitTest(camera, e.clientX, e.clientY, 40);
+    if (planetHit) {
+      starInfo.hide();
+      planetInfo.show(planetHit.meta);
+      // Sayyora indeksini yangilash (flyTo uchun)
+      const idx = PLANETS_META.findIndex((p) => p.body === planetHit.body);
+      if (idx >= 0) currentIndex = idx;
+      console.log(`[scene] Sayyora bosildi: ${planetHit.meta.name}`);
+      return;
+    }
+
+    // 2) Yulduz
     if (!starLabels) return;
-    const hit: NamedStar | null = starLabels.hitTest(camera, e.clientX, e.clientY, 40);
+    const hit: NamedStar | null = starLabels.hitTest(
+      camera,
+      e.clientX,
+      e.clientY,
+      40,
+    );
     if (hit) {
       starInfo.show(hit);
       planetInfo.hide();
-      console.log(`[scene] Yulduz: ${hit.nameUz} (${hit.name})`);
+      console.log(`[scene] Yulduz bosildi: ${hit.nameUz} (${hit.name})`);
     }
   });
 
   return {
-    scene, camera, controls, time,
-    getDistance() { return camera.position.length(); },
-    getSpeed() { return currentSpeed; },
+    scene,
+    camera,
+    controls,
+    time,
+
+    getDistance() {
+      return camera.position.length();
+    },
+
+    getSpeed() {
+      return currentSpeed;
+    },
+
     resize(width, height) {
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
     },
+
     update(dt) {
       if (fly.isActive()) {
         fly.update(camera, dt);
@@ -169,7 +212,9 @@ function createStarPoints(stars: Star[]): THREE.Points {
   for (let i = 0; i < stars.length; i++) {
     const s = stars[i];
     const r = s.dist * PARSEC_SCALE;
-    const px = s.x * r, py = s.y * r, pz = s.z * r;
+    const px = s.x * r;
+    const py = s.y * r;
+    const pz = s.z * r;
     if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)) continue;
 
     positions[n * 3 + 0] = px;

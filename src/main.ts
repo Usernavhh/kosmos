@@ -5,6 +5,7 @@ import { DevPanel } from './engine/core/DevPanel';
 import { createScene } from './engine/scene/Scene';
 import { PlanetInfo } from './ui/PlanetInfo';
 import { StarInfo } from './ui/StarInfo';
+import { TurboSelector } from './ui/TurboSelector';
 
 const params = new URLSearchParams(location.search);
 
@@ -13,15 +14,36 @@ if (!container) throw new Error('#app topilmadi');
 
 const planetInfo = new PlanetInfo();
 const starInfo = new StarInfo();
+const turboSelector = new TurboSelector();
+
 const renderer = new Renderer(container);
-const sceneHandle = createScene(renderer.canvas, planetInfo, starInfo);
+
+const sceneHandle = createScene(
+  renderer.canvas,
+  planetInfo,
+  starInfo,
+  {
+    onTurboShow: (i) => turboSelector.show(i),
+    onTurboSelect: (i) => turboSelector.update(i),
+    onTurboHide: () => turboSelector.hide(),
+  },
+);
+
 const quality = new QualityManager(params);
-const devPanel = new DevPanel(quality, sceneHandle.time, params);
+const devPanel = new DevPanel(
+  quality,
+  sceneHandle.time,
+  sceneHandle.controls,
+  params,
+);
 
 function applySize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  renderer.setSize(Math.floor(w * quality.renderScale), Math.floor(h * quality.renderScale));
+  renderer.setSize(
+    Math.floor(w * quality.renderScale),
+    Math.floor(h * quality.renderScale),
+  );
   renderer.canvas.style.width = w + 'px';
   renderer.canvas.style.height = h + 'px';
   sceneHandle.resize(w, h);

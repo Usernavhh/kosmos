@@ -1,5 +1,7 @@
 import type { QualityManager } from './QualityManager';
 import type { TimeManager } from './TimeManager';
+import type { Controls } from './Controls';
+import { TURBO_LEVELS } from './Controls';
 
 export class DevPanel {
   private el: HTMLDivElement;
@@ -9,6 +11,7 @@ export class DevPanel {
   constructor(
     private quality: QualityManager,
     private time: TimeManager,
+    private controls: Controls,
     params: URLSearchParams,
   ) {
     this.enabled = params.get('stats') === '1';
@@ -17,7 +20,6 @@ export class DevPanel {
     this.el.textContent = '...';
     this.el.style.display = this.enabled ? 'block' : 'none';
     document.body.appendChild(this.el);
-    console.log('[DevPanel] enabled:', this.enabled);
   }
 
   update(dt: number, distance: number, speed: number) {
@@ -32,9 +34,17 @@ export class DevPanel {
     const d = Number.isFinite(distance) ? distance.toFixed(0) : '?';
     const s = Number.isFinite(speed) ? speed.toFixed(0) : '?';
 
+    const lvl = TURBO_LEVELS[this.controls.turboIndex];
+    const turboText =
+      this.controls.turboIndex > 0
+        ? `TURBO ${lvl.name} (×${lvl.mult})`
+        : 'TURBO off';
+    const color = this.controls.turboIndex > 0 ? '#ffcc44' : '#5a7090';
+
     this.el.innerHTML =
       `FPS ${this.quality.fps.toFixed(0)} | ` +
       `dist ${d} | speed ${s} u/s | RAM ${memText}<br>` +
-      `⏱ ${this.time.format()} | ${this.time.formatSpeed()}`;
+      `⏱ ${this.time.format()} | ${this.time.formatSpeed()}<br>` +
+      `<span style="color:${color}">${turboText}</span>`;
   }
 }

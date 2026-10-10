@@ -11,6 +11,7 @@ html, body, #app {
 
 canvas { display: block; }
 
+/* ========== DevPanel ========== */
 .dev-panel {
   position: fixed;
   top: 8px;
@@ -27,6 +28,7 @@ canvas { display: block; }
   line-height: 1.5;
 }
 
+/* ========== Planet / Star info ========== */
 .planet-info {
   position: fixed;
   top: 16px;
@@ -89,4 +91,74 @@ canvas { display: block; }
   font-size: 11px;
   color: #5a7090;
   font-family: ui-monospace, monospace;
+}
+
+/* ========== Turbo Selector ========== */
+.turbo-selector {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 24px 32px;
+  background: rgba(8, 12, 24, 0.92);
+  border: 1px solid rgba(120, 180, 255, 0.6);
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
+  z-index: 300;
+  text-align: center;
+}
+
+.ts-title {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: #7a90b8;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.ts-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.ts-item {
+  min-width: 76px;
+  padding: 12px 8px;
+  border-radius: 10px;
+  border: 2px solid rgba(120, 180, 255, 0.2);
+  color: #6b7f9e;
+  background: rgba(20, 30, 50, 0.4);
+  transition: all 0.12s ease-out;
+  text-align: center;
+}
+
+.ts-item.ts-active {
+  border-color: #ffcc44;
+  color: #ffcc44;
+  background: rgba(255, 204, 68, 0.12);
+  box-shadow: 0 0 24px rgba(255, 204, 68, 0.35);
+  transform: scale(1.08);
+}
+
+.ts-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.ts-mult {
+  font-size: 10px;
+  opacity: 0.7;
+  font-family: ui-monospace, monospace;
+  margin-top: 3px;
+}
+
+.ts-hint {
+  margin-top: 18px;
+  font-size: 11px;
+  color: #5a7090;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 1px;
 }

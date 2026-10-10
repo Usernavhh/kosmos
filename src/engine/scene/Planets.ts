@@ -13,7 +13,6 @@ export interface PlanetMeta {
   periodDays: number;
   temperature: string;
   texture: string;
-  color?: number;
   ring?: boolean;
 }
 
@@ -88,35 +87,52 @@ export function createPlanets(): PlanetsHandle {
   const loader = new THREE.TextureLoader();
   const byBody = new Map<Body, PlanetInstance>();
 
+  // ========== Quyosh nuri ==========
+  // Butun Quyosh sistemasiga yorug'lik tarqatadi.
+  // decay=0 — masofa bilan kuchsizlanmaydi (katta miqyosda kerak).
+  const sunLight = new THREE.PointLight(0xffffff, 2.5, 0, 0);
+  group.add(sunLight);
+
+  // Yengil ambient — to'liq qorong'i tomonni ko'rinadigan qilish uchun
+  const ambient = new THREE.AmbientLight(0x334466, 0.35);
+  group.add(ambient);
+
   // ========== Quyosh ==========
   const sunTex = loader.load('/textures/sun.jpg');
   sunTex.colorSpace = THREE.SRGBColorSpace;
+
   const sunGeom = new THREE.SphereGeometry(SUN_RADIUS, 48, 32);
-  const sunMat = new THREE.MeshBasicMaterial({ map: sunTex, color: 0xffaa22 });
+  const sunMat = new THREE.MeshBasicMaterial({ map: sunTex });
   const sun = new THREE.Mesh(sunGeom, sunMat);
   group.add(sun);
 
+  // Quyosh glow
   const glowGeom = new THREE.SphereGeometry(SUN_RADIUS * 1.8, 32, 24);
   const glowMat = new THREE.MeshBasicMaterial({
-    color: 0xffaa33, transparent: true, opacity: 0.18, side: THREE.BackSide,
+    color: 0xffaa33,
+    transparent: true,
+    opacity: 0.18,
+    side: THREE.BackSide,
   });
   const sunGlow = new THREE.Mesh(glowGeom, glowMat);
   group.add(sunGlow);
 
-  // ========== Sayyoralar ==========
+  // ========== Sayyoralar (yorug'likka javob beradi) ==========
   for (const def of PLANETS_META) {
     const tex = loader.load(def.texture);
     tex.colorSpace = THREE.SRGBColorSpace;
 
     const geom = new THREE.SphereGeometry(def.radius, 48, 32);
-    const mat = new THREE.MeshBasicMaterial({
+    // MeshPhongMaterial — yorug'likka javob beradi
+    const mat = new THREE.MeshPhongMaterial({
       map: tex,
-      color: def.color ?? 0xffffff,
+      shininess: 5,
+      specular: 0x111111,
     });
     const mesh = new THREE.Mesh(geom, mat);
     group.add(mesh);
 
-    // Orbita chizig'i
+    // Orbita
     const orbitPoints = computeOrbitPoints(def.body, 256, def.periodDays);
     const orbitGeom = new THREE.BufferGeometry().setFromPoints(orbitPoints);
     const orbitMat = new THREE.LineBasicMaterial({
@@ -129,8 +145,12 @@ export function createPlanets(): PlanetsHandle {
     let ring: THREE.Mesh | undefined;
     if (def.ring) {
       const ringGeom = new THREE.RingGeometry(def.radius * 1.4, def.radius * 2.2, 96);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: 0xd4b88a, transparent: true, opacity: 0.7, side: THREE.DoubleSide,
+      const ringMat = new THREE.MeshPhongMaterial({
+        color: 0xd4b88a,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.DoubleSide,
+        shininess: 2,
       });
       ring = new THREE.Mesh(ringGeom, ringMat);
       ring.rotation.x = Math.PI / 2.2;
@@ -140,6 +160,7 @@ export function createPlanets(): PlanetsHandle {
     byBody.set(def.body, { mesh, body: def.body, ring });
   }
 
+  // ========== Update ==========
   function update(date: Date) {
     const time = MakeTime(date);
     sun.rotation.y += 0.001;

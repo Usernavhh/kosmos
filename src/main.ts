@@ -4,25 +4,24 @@ import { QualityManager } from './engine/core/QualityManager';
 import { DevPanel } from './engine/core/DevPanel';
 import { createScene } from './engine/scene/Scene';
 import { PlanetInfo } from './ui/PlanetInfo';
+import { StarInfo } from './ui/StarInfo';
 
 const params = new URLSearchParams(location.search);
 
 const container = document.getElementById('app');
 if (!container) throw new Error('#app topilmadi');
 
-const info = new PlanetInfo();
+const planetInfo = new PlanetInfo();
+const starInfo = new StarInfo();
 const renderer = new Renderer(container);
-const sceneHandle = createScene(renderer.canvas, info);
+const sceneHandle = createScene(renderer.canvas, planetInfo, starInfo);
 const quality = new QualityManager(params);
 const devPanel = new DevPanel(quality, sceneHandle.time, params);
 
 function applySize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  renderer.setSize(
-    Math.floor(w * quality.renderScale),
-    Math.floor(h * quality.renderScale),
-  );
+  renderer.setSize(Math.floor(w * quality.renderScale), Math.floor(h * quality.renderScale));
   renderer.canvas.style.width = w + 'px';
   renderer.canvas.style.height = h + 'px';
   sceneHandle.resize(w, h);

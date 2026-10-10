@@ -1,0 +1,64 @@
+{
+  "constellations": [
+    {
+      "name": "Orion",
+      "nameUz": "Javzo",
+      "lines": [
+        ["Betelgeuse", "Bellatrix"],
+        ["Bellatrix", "Mintaka"],
+        ["Mintaka", "Alnilam"],
+        ["Alnilam", "Alnitak"],
+        ["Alnitak", "Betelgeuse"],
+        ["Mintaka", "Rigel"],
+        ["Rigel", "Saiph"],
+        ["Saiph", "Alnitak"],
+        ["Rigel", "Betelgeuse"]
+      ]
+    },
+    {
+      "name": "Ursa Major",
+      "nameUz": "Katta Ayiq",
+      "lines": [
+        ["Dubhe", "Merak"],
+        ["Merak", "Phecda"],
+        ["Phecda", "Megrez"],
+        ["Megrez", "Dubhe"],
+        ["Megrez", "Alioth"],
+        ["Alioth", "Mizar"],
+        ["Mizar", "Alkaid"]
+      ]
+    },
+    {
+      "name": "Cassiopeia",
+      "nameUz": "Kassiopeya",
+      "lines": [
+        ["Schedar", "Caph"],
+        ["Caph", "Gamma Cassiopeiae"],
+        ["Gamma Cassiopeiae", "Ruchbah"],
+        ["Ruchbah", "Segin"]
+      ]
+    },
+    {
+      "name": "Cygnus",
+      "nameUz": "Oqqush",
+      "lines": [
+        ["Deneb", "Sadr"],
+        ["Sadr", "Albireo"],
+        ["Gienah", "Sadr"],
+        ["Sadr", "Delta Cygni"]
+      ]
+    },
+    {
+      "name": "Scorpius",
+      "nameUz": "Aqrab",
+      "lines": [
+        ["Antares", "Acrab"],
+        ["Acrab", "Dschubba"],
+        ["Dschubba", "Pi Scorpii"],
+        ["Antares", "Tau Scorpii"],
+        ["Tau Scorpii", "Epsilon Scorpii"],
+        ["Epsilon Scorpii", "Shaula"]
+      ]
+    }
+  ]
+}

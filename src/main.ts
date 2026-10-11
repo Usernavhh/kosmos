@@ -7,6 +7,8 @@ import { PlanetInfo } from './ui/PlanetInfo';
 import { StarInfo } from './ui/StarInfo';
 import { SatInfo } from './ui/SatInfo';
 import { TurboSelector } from './ui/TurboSelector';
+import { TourUI } from './ui/TourUI';
+import { TOURS } from './data/tours';
 
 const params = new URLSearchParams(location.search);
 
@@ -17,6 +19,7 @@ const planetInfo = new PlanetInfo();
 const starInfo = new StarInfo();
 const satInfo = new SatInfo();
 const turboSelector = new TurboSelector();
+const tourUI = new TourUI();
 
 const renderer = new Renderer(container);
 
@@ -30,7 +33,25 @@ const sceneHandle = createScene(
     onTurboSelect: (i) => turboSelector.update(i),
     onTurboHide: () => turboSelector.hide(),
   },
+  {
+    onStart: (tour) => tourUI.show(tour),
+    onKeyframe: (kf) => tourUI.setText(kf.text, kf.title),
+    onEnd: () => tourUI.hide(),
+  },
 );
+
+// Tour tugmalari (klaviatura)
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Digit7') {
+    sceneHandle.tours.start(TOURS[0], sceneHandle.camera);
+  }
+  if (e.code === 'Digit8') {
+    sceneHandle.tours.start(TOURS[1], sceneHandle.camera);
+  }
+  if (e.code === 'Digit9') {
+    sceneHandle.tours.start(TOURS[2], sceneHandle.camera);
+  }
+});
 
 const quality = new QualityManager(params);
 const devPanel = new DevPanel(

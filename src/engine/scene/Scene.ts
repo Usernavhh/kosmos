@@ -9,11 +9,14 @@ import { Controls, type ControlsCallbacks } from '../core/Controls';
 import { TimeManager } from '../core/TimeManager';
 import { setupTimeKeyboard } from '../core/Keyboard';
 import { CameraFly } from '../core/CameraFly';
+import { TourManager, type TourCallbacks } from '../core/TourManager';
 import { createPlanets, type PlanetsHandle, PLANETS_META } from './Planets';
 import { createStarLabels, type StarLabelsHandle } from './StarLabels';
 import { createAsteroids, type AsteroidsHandle } from './Asteroids';
 import { createComets, type CometsHandle } from './Comets';
 import { createSatellites, type SatellitesHandle } from './Satellites';
+import { createGalaxies, type GalaxiesHandle } from './Galaxies';
+import { createExoplanets, type ExoplanetsHandle } from './Exoplanets';
 import type { PlanetInfo } from '../../ui/PlanetInfo';
 import type { StarInfo } from '../../ui/StarInfo';
 import type { SatInfo } from '../../ui/SatInfo';
@@ -23,6 +26,7 @@ export interface SceneHandle {
   camera: THREE.PerspectiveCamera;
   controls: Controls;
   time: TimeManager;
+  tours: TourManager;
   getDistance(): number;
   getSpeed(): number;
   resize(width: number, height: number): void;
@@ -30,7 +34,7 @@ export interface SceneHandle {
 }
 
 const MIN_SPEED = 10;
-const MAX_SPEED = 100_000;
+const MAX_SPEED = 1_000_000;
 const PARSEC_SCALE = 500_000;
 const HOME_POSITION = new THREE.Vector3(0, 20000, 60000);
 
@@ -40,18 +44,20 @@ export function createScene(
   starInfo: StarInfo,
   satInfo: SatInfo,
   controlsCallbacks: ControlsCallbacks = {},
+  tourCallbacks: TourCallbacks = {},
 ): SceneHandle {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x05060a);
 
   const camera = new THREE.PerspectiveCamera(
-    60, window.innerWidth / window.innerHeight, 0.01, 100_000_000,
+    60, window.innerWidth / window.innerHeight, 1, 1e14,
   );
   camera.position.copy(HOME_POSITION);
 
   const controls = new Controls(camera, canvas, controlsCallbacks);
   const time = new TimeManager();
   const fly = new CameraFly();
+  const tours = new TourManager(tourCallbacks);
 
   setupTimeKeyboard(time);
 
@@ -68,6 +74,12 @@ export function createScene(
 
   const satellites: SatellitesHandle = createSatellites();
   scene.add(satellites.group);
+
+  const galaxies: GalaxiesHandle = createGalaxies();
+  scene.add(galaxies.group);
+
+  const exoplanets: ExoplanetsHandle = createExoplanets();
+  scene.add(exoplanets.group);
 
   let starsMesh: THREE.Points | null = null;
   let currentSpeed = MIN_SPEED;
@@ -124,6 +136,7 @@ export function createScene(
 
   function goHome() {
     fly.stop();
+    tours.stop();
     camera.position.copy(HOME_POSITION);
     const dummy = new THREE.Object3D();
     dummy.position.copy(HOME_POSITION);
@@ -143,43 +156,38 @@ export function createScene(
       planetInfo.hide();
       starInfo.hide();
       satInfo.hide();
+      if (tours.isActive()) tours.stop();
     }
     if (e.code === 'KeyH') goHome();
   });
 
   canvas.addEventListener('click', (e) => {
-    // 1) Sayyora
     const planetHit = planets.hitTest(camera, e.clientX, e.clientY, 40);
     if (planetHit) {
-      starInfo.hide();
-      satInfo.hide();
+      starInfo.hide(); satInfo.hide();
       planetInfo.show(planetHit.meta);
       const idx = PLANETS_META.findIndex((p) => p.body === planetHit.body);
       if (idx >= 0) currentIndex = idx;
       return;
     }
 
-    // 2) Yo'ldosh
     const satHit = satellites.hitTest(camera, e.clientX, e.clientY, 20);
     if (satHit) {
-      planetInfo.hide();
-      starInfo.hide();
+      planetInfo.hide(); starInfo.hide();
       satInfo.show(satHit);
       return;
     }
 
-    // 3) Yulduz
     if (!starLabels) return;
     const hit: NamedStar | null = starLabels.hitTest(camera, e.clientX, e.clientY, 40);
     if (hit) {
-      planetInfo.hide();
-      satInfo.hide();
+      planetInfo.hide(); satInfo.hide();
       starInfo.show(hit);
     }
   });
 
   return {
-    scene, camera, controls, time,
+    scene, camera, controls, time, tours,
 
     getDistance() { return camera.position.length(); },
     getSpeed() { return currentSpeed; },
@@ -190,22 +198,24 @@ export function createScene(
     },
 
     update(dt) {
-      if (fly.isActive()) {
+      if (tours.isActive()) {
+        tours.update(camera, dt);
+      } else if (fly.isActive()) {
         fly.update(camera, dt);
         if (!fly.isActive()) controls.syncFromCamera();
       } else {
         const distFromCenter = camera.position.length();
-        const t = Math.min(1, distFromCenter / 50_000);
+        const t = Math.min(1, Math.log10(Math.max(distFromCenter, 1)) / 10);
         currentSpeed = MIN_SPEED * Math.pow(MAX_SPEED / MIN_SPEED, t);
         controls.update(dt, currentSpeed);
-        time.update(dt);
-
-        const now = time.now;
-        planets.update(now);
-        asteroids.update(now);
-        comets.update(now);
-        satellites.update(now);
       }
+
+      time.update(dt);
+      const now = time.now;
+      planets.update(now);
+      asteroids.update(now);
+      comets.update(now);
+      satellites.update(now);
     },
   };
 }

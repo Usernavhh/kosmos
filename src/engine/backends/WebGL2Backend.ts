@@ -4,12 +4,14 @@ import type { RenderBackend } from './RenderBackend';
 export class WebGL2Backend implements RenderBackend {
   readonly kind = 'webgl2' as const;
   readonly canvas: HTMLCanvasElement;
-  private renderer: THREE.WebGLRenderer;
+  readonly renderer: THREE.WebGLRenderer;
 
   constructor() {
     this.renderer = new THREE.WebGLRenderer({
       antialias: false,
       powerPreference: 'high-performance',
+      stencil: false,
+      alpha: false,
     });
     this.canvas = this.renderer.domElement;
   }

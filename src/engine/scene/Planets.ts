@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { Body, HelioVector, GeoMoon, MakeTime } from 'astronomy-engine';
+import type { PresetConfig } from '../core/QualityManager';
+import type { MemoryTracker } from '../core/MemoryTracker';
+import { createSun, type SunHandle } from './Sun';
 
 export const AU_SCALE = 5000;
 
@@ -13,26 +16,31 @@ export interface PlanetMeta {
   periodDays: number;
   temperature: string;
   texture: string;
+  textureNight?: string;
   ring?: boolean;
+  ringColor?: number;
+  ringInner?: number;
+  ringOuter?: number;
+  atmosphereColor?: number;
+  atmosphereScale?: number;
+  atmosphereOpacity?: number;
 }
 
 export const PLANETS_META: PlanetMeta[] = [
   { name: 'Merkuriy', nameEn: 'Mercury', body: Body.Mercury, radius: 80, realRadiusKm: 2439, distanceAU: 0.39, periodDays: 88, temperature: '-173…+427°C', texture: '/textures/mercurymap.jpg' },
-  { name: 'Venera', nameEn: 'Venus', body: Body.Venus, radius: 140, realRadiusKm: 6052, distanceAU: 0.72, periodDays: 225, temperature: '+464°C', texture: '/textures/venusmap.jpg' },
-  { name: 'Yer', nameEn: 'Earth', body: Body.Earth, radius: 150, realRadiusKm: 6371, distanceAU: 1.0, periodDays: 365, temperature: '+15°C', texture: '/textures/earth_day.jpg' },
-  { name: 'Mars', nameEn: 'Mars', body: Body.Mars, radius: 100, realRadiusKm: 3390, distanceAU: 1.52, periodDays: 687, temperature: '-63°C', texture: '/textures/marsmap1k.jpg' },
-  { name: 'Yupiter', nameEn: 'Jupiter', body: Body.Jupiter, radius: 500, realRadiusKm: 69911, distanceAU: 5.2, periodDays: 4333, temperature: '-108°C', texture: '/textures/jupitermap.jpg' },
-  { name: 'Saturn', nameEn: 'Saturn', body: Body.Saturn, radius: 450, realRadiusKm: 58232, distanceAU: 9.58, periodDays: 10759, temperature: '-139°C', texture: '/textures/saturnmap.jpg', ring: true },
-  { name: 'Uran', nameEn: 'Uranus', body: Body.Uranus, radius: 250, realRadiusKm: 25362, distanceAU: 19.2, periodDays: 30687, temperature: '-197°C', texture: '/textures/uranusmap.jpg' },
-  { name: 'Neptun', nameEn: 'Neptune', body: Body.Neptune, radius: 240, realRadiusKm: 24622, distanceAU: 30.05, periodDays: 60190, temperature: '-201°C', texture: '/textures/neptunemap.jpg' },
+  { name: 'Venera', nameEn: 'Venus', body: Body.Venus, radius: 140, realRadiusKm: 6052, distanceAU: 0.72, periodDays: 225, temperature: '+464°C', texture: '/textures/venusmap.jpg', atmosphereColor: 0xffdd88, atmosphereScale: 1.06, atmosphereOpacity: 0.35 },
+  { name: 'Yer', nameEn: 'Earth', body: Body.Earth, radius: 150, realRadiusKm: 6371, distanceAU: 1.0, periodDays: 365, temperature: '+15°C', texture: '/textures/earth_day.jpg', textureNight: '/textures/earth_night.png', atmosphereColor: 0x4488ff, atmosphereScale: 1.18, atmosphereOpacity: 0.32 },
+  { name: 'Mars', nameEn: 'Mars', body: Body.Mars, radius: 100, realRadiusKm: 3390, distanceAU: 1.52, periodDays: 687, temperature: '-63°C', texture: '/textures/marsmap1k.jpg', atmosphereColor: 0xff9966, atmosphereScale: 1.05, atmosphereOpacity: 0.2 },
+  { name: 'Yupiter', nameEn: 'Jupiter', body: Body.Jupiter, radius: 500, realRadiusKm: 69911, distanceAU: 5.2, periodDays: 4333, temperature: '-108°C', texture: '/textures/jupitermap.jpg', atmosphereColor: 0xffddaa, atmosphereScale: 1.03, atmosphereOpacity: 0.15 },
+  { name: 'Saturn', nameEn: 'Saturn', body: Body.Saturn, radius: 450, realRadiusKm: 58232, distanceAU: 9.58, periodDays: 10759, temperature: '-139°C', texture: '/textures/saturnmap.jpg', ring: true, ringColor: 0xd4b88a, ringInner: 1.4, ringOuter: 2.2, atmosphereColor: 0xffddaa, atmosphereScale: 1.03, atmosphereOpacity: 0.15 },
+  { name: 'Uran', nameEn: 'Uranus', body: Body.Uranus, radius: 250, realRadiusKm: 25362, distanceAU: 19.2, periodDays: 30687, temperature: '-197°C', texture: '/textures/uranusmap.jpg', ring: true, ringColor: 0x99aabb, ringInner: 1.6, ringOuter: 2.0, atmosphereColor: 0x88ffdd, atmosphereScale: 1.05, atmosphereOpacity: 0.18 },
+  { name: 'Neptun', nameEn: 'Neptune', body: Body.Neptune, radius: 240, realRadiusKm: 24622, distanceAU: 30.05, periodDays: 60190, temperature: '-201°C', texture: '/textures/neptunemap.jpg', atmosphereColor: 0x6688ff, atmosphereScale: 1.08, atmosphereOpacity: 0.22 },
 ];
 
-// ========== Yo'ldoshlar (sayyora oylari) ==========
 interface MoonDef {
   name: string;
   nameUz: string;
   parentBody: Body;
-  /** Orbita radiusi sahnada (parent radiusidan necha marta) */
   orbitScale: number;
   radius: number;
   periodDays: number;
@@ -41,21 +49,16 @@ interface MoonDef {
 }
 
 const MOONS: MoonDef[] = [
-  // Mars
   { name: 'Phobos', nameUz: 'Fobos', parentBody: Body.Mars, orbitScale: 3.5, radius: 8, periodDays: 0.319, color: 0x8a8070, phase: 0 },
   { name: 'Deimos', nameUz: 'Deymos', parentBody: Body.Mars, orbitScale: 5.5, radius: 6, periodDays: 1.263, color: 0x9a8877, phase: 2 },
-  // Yupiter
   { name: 'Io', nameUz: 'Io', parentBody: Body.Jupiter, orbitScale: 2.5, radius: 20, periodDays: 1.769, color: 0xffdd88, phase: 0 },
   { name: 'Europa', nameUz: 'Yevropa', parentBody: Body.Jupiter, orbitScale: 3.2, radius: 18, periodDays: 3.551, color: 0xddddcc, phase: 1 },
   { name: 'Ganymede', nameUz: 'Ganimed', parentBody: Body.Jupiter, orbitScale: 4.0, radius: 26, periodDays: 7.155, color: 0xbb9988, phase: 2 },
   { name: 'Callisto', nameUz: 'Kallisto', parentBody: Body.Jupiter, orbitScale: 5.0, radius: 24, periodDays: 16.689, color: 0x776655, phase: 3 },
-  // Saturn
   { name: 'Titan', nameUz: 'Titan', parentBody: Body.Saturn, orbitScale: 4.0, radius: 22, periodDays: 15.945, color: 0xdd9955, phase: 0 },
-  // Neptun
   { name: 'Triton', nameUz: 'Triton', parentBody: Body.Neptune, orbitScale: 3.5, radius: 16, periodDays: 5.877, color: 0xccddee, phase: 0 },
 ];
 
-const SUN_RADIUS = 800;
 const MOON_DISTANCE = 600;
 const MOON_RADIUS = 40;
 const EARTH_RADIUS = 150;
@@ -71,12 +74,15 @@ export interface PlanetsHandle {
   getPosition(body: Body): THREE.Vector3 | null;
   getRadius(body: Body): number;
   hitTest(camera: THREE.Camera, clickX: number, clickY: number, maxPixels: number): PlanetHit | null;
+  sun: SunHandle;
 }
 
 interface PlanetInstance {
   mesh: THREE.Mesh;
   meta: PlanetMeta;
   ring?: THREE.Mesh;
+  atmosphere?: THREE.Mesh;
+  clouds?: THREE.Mesh;
 }
 
 interface MoonInstance {
@@ -85,38 +91,66 @@ interface MoonInstance {
   parentRadius: number;
 }
 
-export function createPlanets(): PlanetsHandle {
+/**
+ * Tekstura yuklash + RAM tracking.
+ */
+function loadTexture(
+  loader: THREE.TextureLoader,
+  filename: string,
+  config: PresetConfig,
+  memory: MemoryTracker,
+): THREE.Texture {
+  // Preset bo'yicha papka tanlash
+  const sizeFolder = config.textureSize.toString();
+  const path = `/textures/${sizeFolder}/${filename}`;
+
+  const tex = loader.load(
+    path,
+    undefined,
+    undefined,
+    () => {
+      // Xato bo'lsa — 2048 papkasidan fallback
+      console.warn(`[texture] ${path} topilmadi, fallback: /textures/2048/${filename}`);
+      const fallback = loader.load(`/textures/2048/${filename}`);
+      fallback.colorSpace = THREE.SRGBColorSpace;
+      tex.image = fallback.image;
+      tex.needsUpdate = true;
+    },
+  );
+
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = config.textureSize >= 2048 ? 8 : config.textureSize >= 1024 ? 4 : 2;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = true;
+
+  const size = config.textureSize;
+  memory.addTexture(size, size / 2, true);
+
+  return tex;
+}
+
+export function createPlanets(
+  config: PresetConfig,
+  memory: MemoryTracker,
+): PlanetsHandle {
   const group = new THREE.Group();
   const loader = new THREE.TextureLoader();
   const instances: PlanetInstance[] = [];
   const moonInstances: MoonInstance[] = [];
 
-  const sunLight = new THREE.PointLight(0xffffff, 2.5, 0, 0);
-  group.add(sunLight);
-  group.add(new THREE.AmbientLight(0x334466, 0.35));
+  const seg = config.sphereSegments;
+  const segHalf = Math.round(seg / 2);
 
-  // ========== Quyosh ==========
-  const sunTex = loader.load('/textures/sun.jpg');
-  sunTex.colorSpace = THREE.SRGBColorSpace;
-  const sun = new THREE.Mesh(
-    new THREE.SphereGeometry(SUN_RADIUS, 48, 32),
-    new THREE.MeshBasicMaterial({ map: sunTex }),
-  );
-  group.add(sun);
+  // ═══ Quyosh ═══
+  const sun = createSun(config, memory);
+  group.add(sun.group);
 
-  const sunGlow = new THREE.Mesh(
-    new THREE.SphereGeometry(SUN_RADIUS * 1.8, 32, 24),
-    new THREE.MeshBasicMaterial({
-      color: 0xffaa33, transparent: true, opacity: 0.18, side: THREE.BackSide,
-    }),
-  );
-  group.add(sunGlow);
+  group.add(new THREE.AmbientLight(0x445577, 0.35));
 
-  // ========== Yer maxsus shader ==========
-  const earthDayTex = loader.load('/textures/earth_day.jpg');
-  earthDayTex.colorSpace = THREE.SRGBColorSpace;
-  const earthNightTex = loader.load('/textures/earth_night.png');
-  earthNightTex.colorSpace = THREE.SRGBColorSpace;
+  // ═══ Yer maxsus shader ═══
+  const earthDayTex = loadTexture(loader, 'earth_day.jpg', config, memory);
+  const earthNightTex = loadTexture(loader, 'earth_night.png', config, memory);
 
   const earthUniforms = {
     dayTexture: { value: earthDayTex },
@@ -152,62 +186,92 @@ export function createPlanets(): PlanetsHandle {
     `,
   });
 
-  // ========== Sayyoralar ==========
+  // ═══ Sayyoralar ═══
   let earthMesh: THREE.Mesh | null = null;
 
   for (const def of PLANETS_META) {
+    const geom = new THREE.SphereGeometry(def.radius, seg, segHalf);
+    memory.addGeometry(geom.attributes.position.count, geom.index?.count ?? 0);
+
     let mesh: THREE.Mesh;
 
     if (def.body === Body.Earth) {
-      mesh = new THREE.Mesh(new THREE.SphereGeometry(def.radius, 64, 48), earthMat);
+      mesh = new THREE.Mesh(geom, earthMat);
       earthMesh = mesh;
     } else {
-      const tex = loader.load(def.texture);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(def.radius, 48, 32),
-        new THREE.MeshPhongMaterial({ map: tex, shininess: 5, specular: 0x111111 }),
-      );
+      // def.texture dan fayl nomini olish
+      const filename = def.texture.split('/').pop() ?? def.texture;
+      const tex = loadTexture(loader, filename, config, memory);
+      const mat = new THREE.MeshPhongMaterial({
+        map: tex,
+        shininess: config.normalMaps ? 12 : 5,
+        specular: new THREE.Color(config.normalMaps ? 0x444444 : 0x111111),
+      });
+      mesh = new THREE.Mesh(geom, mat);
     }
     group.add(mesh);
 
-    const orbitPoints = computeOrbitPoints(def.body, 256, def.periodDays);
+    // ═══ Orbita ═══
+    const orbitPoints = computeOrbitPoints(def.body, config.orbitSegments, def.periodDays);
+    const orbitGeom = new THREE.BufferGeometry().setFromPoints(orbitPoints);
     const orbit = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(orbitPoints),
+      orbitGeom,
       new THREE.LineBasicMaterial({ color: 0x445588, transparent: true, opacity: 0.35 }),
     );
     group.add(orbit);
 
+    // ═══ Atmosfera ═══
+    let atmosphere: THREE.Mesh | undefined;
+    if (config.atmosphere && def.atmosphereColor) {
+      const atmoScale = def.atmosphereScale ?? 1.1;
+      const atmoGeom = new THREE.SphereGeometry(def.radius * atmoScale, segHalf, segHalf / 2);
+      memory.addGeometry(atmoGeom.attributes.position.count, atmoGeom.index?.count ?? 0);
+
+      const atmoMat = new THREE.MeshBasicMaterial({
+        color: def.atmosphereColor,
+        transparent: true,
+        opacity: def.atmosphereOpacity ?? 0.2,
+        side: THREE.BackSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+      atmosphere = new THREE.Mesh(atmoGeom, atmoMat);
+      group.add(atmosphere);
+    }
+
+    // ═══ Halqa ═══
     let ring: THREE.Mesh | undefined;
     if (def.ring) {
+      const inner = def.ringInner ?? 1.4;
+      const outer = def.ringOuter ?? 2.2;
+      const ringSeg = config.textureSize >= 2048 ? 128 : 64;
+      const ringGeom = new THREE.RingGeometry(def.radius * inner, def.radius * outer, ringSeg);
+      memory.addGeometry(ringGeom.attributes.position.count, ringGeom.index?.count ?? 0);
+
       ring = new THREE.Mesh(
-        new THREE.RingGeometry(def.radius * 1.4, def.radius * 2.2, 96),
+        ringGeom,
         new THREE.MeshPhongMaterial({
-          color: 0xd4b88a, transparent: true, opacity: 0.7,
-          side: THREE.DoubleSide, shininess: 2,
+          color: def.ringColor ?? 0xd4b88a,
+          transparent: true,
+          opacity: 0.7,
+          side: THREE.DoubleSide,
+          shininess: config.normalMaps ? 5 : 2,
         }),
       );
       ring.rotation.x = Math.PI / 2.2;
       group.add(ring);
     }
 
-    instances.push({ mesh, meta: def, ring });
+    instances.push({ mesh, meta: def, ring, atmosphere });
   }
 
-  // ========== Yer atmosferasi + bulutlar ==========
-  const earthAtmosphere = new THREE.Mesh(
-    new THREE.SphereGeometry(EARTH_RADIUS * 1.15, 64, 48),
-    new THREE.MeshBasicMaterial({
-      color: 0x4488ff, transparent: true, opacity: 0.22,
-      side: THREE.BackSide, depthWrite: false,
-    }),
-  );
-  group.add(earthAtmosphere);
+  // ═══ Yer bulutlari ═══
+  const cloudsTex = loadTexture(loader, 'earth_clouds.png', config, memory);
+  const cloudsGeom = new THREE.SphereGeometry(EARTH_RADIUS * 1.012, seg, segHalf);
+  memory.addGeometry(cloudsGeom.attributes.position.count, cloudsGeom.index?.count ?? 0);
 
-  const cloudsTex = loader.load('/textures/earth_clouds.png');
-  cloudsTex.colorSpace = THREE.SRGBColorSpace;
   const earthClouds = new THREE.Mesh(
-    new THREE.SphereGeometry(EARTH_RADIUS * 1.012, 64, 48),
+    cloudsGeom,
     new THREE.MeshPhongMaterial({
       map: cloudsTex, transparent: true, opacity: 0.85,
       depthWrite: false, shininess: 1,
@@ -215,22 +279,27 @@ export function createPlanets(): PlanetsHandle {
   );
   group.add(earthClouds);
 
-  // ========== Oy (Yer yo'ldoshi) ==========
-  const moonTex = loader.load('/textures/moon.jpg');
-  moonTex.colorSpace = THREE.SRGBColorSpace;
+  // ═══ Oy ═══
+  const moonTex = loadTexture(loader, 'moon.jpg', config, memory);
+  const earthMoonGeom = new THREE.SphereGeometry(MOON_RADIUS, segHalf, segHalf / 2);
+  memory.addGeometry(earthMoonGeom.attributes.position.count, earthMoonGeom.index?.count ?? 0);
+
   const earthMoon = new THREE.Mesh(
-    new THREE.SphereGeometry(MOON_RADIUS, 32, 24),
+    earthMoonGeom,
     new THREE.MeshPhongMaterial({ map: moonTex, shininess: 2 }),
   );
   group.add(earthMoon);
 
-  // ========== Boshqa yo'ldoshlar ==========
+  // ═══ Boshqa yo'ldoshlar ═══
   for (const def of MOONS) {
     const parentMeta = PLANETS_META.find((p) => p.body === def.parentBody);
     if (!parentMeta) continue;
 
+    const moonGeom = new THREE.SphereGeometry(def.radius, 16, 12);
+    memory.addGeometry(moonGeom.attributes.position.count, moonGeom.index?.count ?? 0);
+
     const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(def.radius, 20, 14),
+      moonGeom,
       new THREE.MeshPhongMaterial({ color: def.color, shininess: 3 }),
     );
     group.add(mesh);
@@ -238,10 +307,11 @@ export function createPlanets(): PlanetsHandle {
     moonInstances.push({ mesh, def, parentRadius: parentMeta.radius });
   }
 
-  // ========== Update ==========
+  // ═══ Update ═══
   function update(date: Date) {
     const time = MakeTime(date);
-    sun.rotation.y += 0.001;
+
+    sun.update(1 / 60);
 
     for (const inst of instances) {
       const v = HelioVector(inst.meta.body, time);
@@ -251,26 +321,23 @@ export function createPlanets(): PlanetsHandle {
       inst.mesh.position.set(x, y, z);
       inst.mesh.rotation.y += 0.01;
       if (inst.ring) inst.ring.position.set(x, y, z);
+      if (inst.atmosphere) inst.atmosphere.position.set(x, y, z);
     }
 
     if (earthMesh) {
-      earthAtmosphere.position.copy(earthMesh.position);
       earthClouds.position.copy(earthMesh.position);
       earthClouds.rotation.y += 0.006;
 
       const sunDir = earthMesh.position.clone().negate().normalize();
       earthUniforms.sunDirection.value.copy(sunDir);
 
-      // Oy
       const mv = GeoMoon(date);
       const dir = new THREE.Vector3(mv.x, mv.z, -mv.y).normalize();
       earthMoon.position.copy(earthMesh.position).addScaledVector(dir, MOON_DISTANCE);
       earthMoon.rotation.y += 0.005;
     }
 
-    // Boshqa yo'ldoshlar
-    const daysSinceJ2000 =
-      (date.getTime() - Date.UTC(2000, 0, 1, 12)) / 86400_000;
+    const daysSinceJ2000 = (date.getTime() - Date.UTC(2000, 0, 1, 12)) / 86400_000;
 
     for (const inst of moonInstances) {
       const parentInst = instances.find((p) => p.meta.body === inst.def.parentBody);
@@ -316,7 +383,6 @@ export function createPlanets(): PlanetsHandle {
     for (const inst of instances) {
       projected.copy(inst.mesh.position).project(camera);
       if (projected.z < -1 || projected.z > 1) continue;
-
       const sx = (projected.x * 0.5 + 0.5) * w;
       const sy = (-projected.y * 0.5 + 0.5) * h;
       const cameraDist = camera.position.distanceTo(inst.mesh.position);
@@ -336,7 +402,7 @@ export function createPlanets(): PlanetsHandle {
 
   update(new Date());
 
-  return { group, update, getPosition, getRadius, hitTest };
+  return { group, update, getPosition, getRadius, hitTest, sun };
 }
 
 function computeOrbitPoints(body: Body, segments: number, periodDays: number): THREE.Vector3[] {

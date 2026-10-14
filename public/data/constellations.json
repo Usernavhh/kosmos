@@ -1,220 +1,55 @@
 {
   "constellations": [
-    {
-      "name": "Orion",
-      "nameUz": "Javzo",
-      "lines": [
-        ["Betelgeuse", "Bellatrix"],
-        ["Bellatrix", "Mintaka"],
-        ["Mintaka", "Alnilam"],
-        ["Alnilam", "Alnitak"],
-        ["Alnitak", "Betelgeuse"],
-        ["Mintaka", "Rigel"],
-        ["Rigel", "Saiph"],
-        ["Saiph", "Alnitak"],
-        ["Rigel", "Betelgeuse"]
-      ]
-    },
-    {
-      "name": "Ursa Major",
-      "nameUz": "Katta Ayiq",
-      "lines": [
-        ["Dubhe", "Merak"],
-        ["Merak", "Phecda"],
-        ["Phecda", "Megrez"],
-        ["Megrez", "Dubhe"],
-        ["Megrez", "Alioth"],
-        ["Alioth", "Mizar"],
-        ["Mizar", "Alkaid"]
-      ]
-    },
-    {
-      "name": "Ursa Minor",
-      "nameUz": "Kichik Ayiq",
-      "lines": [
-        ["Polaris", "Yildun"],
-        ["Yildun", "Epsilon Ursae Minoris"],
-        ["Epsilon Ursae Minoris", "Zeta Ursae Minoris"],
-        ["Zeta Ursae Minoris", "Eta Ursae Minoris"],
-        ["Eta Ursae Minoris", "Pherkad"],
-        ["Pherkad", "Kochab"],
-        ["Kochab", "Zeta Ursae Minoris"]
-      ]
-    },
-    {
-      "name": "Cassiopeia",
-      "nameUz": "Kassiopeya",
-      "lines": [
-        ["Schedar", "Caph"],
-        ["Caph", "Gamma Cassiopeiae"],
-        ["Gamma Cassiopeiae", "Ruchbah"],
-        ["Ruchbah", "Segin"]
-      ]
-    },
-    {
-      "name": "Cygnus",
-      "nameUz": "Oqqush",
-      "lines": [
-        ["Deneb", "Sadr"],
-        ["Sadr", "Albireo"],
-        ["Gienah", "Sadr"],
-        ["Sadr", "Delta Cygni"]
-      ]
-    },
-    {
-      "name": "Lyra",
-      "nameUz": "Lira",
-      "lines": [
-        ["Vega", "Sheliak"],
-        ["Sheliak", "Sulafat"],
-        ["Sulafat", "Delta Lyrae"],
-        ["Delta Lyrae", "Zeta Lyrae"],
-        ["Zeta Lyrae", "Vega"]
-      ]
-    },
-    {
-      "name": "Aquila",
-      "nameUz": "Burgut",
-      "lines": [
-        ["Altair", "Tarazed"],
-        ["Altair", "Alshain"],
-        ["Altair", "Delta Aquilae"],
-        ["Delta Aquilae", "Zeta Aquilae"],
-        ["Zeta Aquilae", "Theta Aquilae"]
-      ]
-    },
-    {
-      "name": "Scorpius",
-      "nameUz": "Aqrab",
-      "lines": [
-        ["Antares", "Acrab"],
-        ["Acrab", "Dschubba"],
-        ["Dschubba", "Pi Scorpii"],
-        ["Antares", "Tau Scorpii"],
-        ["Tau Scorpii", "Epsilon Scorpii"],
-        ["Epsilon Scorpii", "Shaula"]
-      ]
-    },
-    {
-      "name": "Leo",
-      "nameUz": "Arslon",
-      "lines": [
-        ["Regulus", "Denebola"],
-        ["Regulus", "Algieba"],
-        ["Algieba", "Zosma"],
-        ["Zosma", "Denebola"],
-        ["Regulus", "Zavijava"],
-        ["Algieba", "Adhafera"]
-      ]
-    },
-    {
-      "name": "Taurus",
-      "nameUz": "Savr",
-      "lines": [
-        ["Aldebaran", "Elnath"],
-        ["Aldebaran", "Theta Tauri"],
-        ["Theta Tauri", "Gamma Tauri"],
-        ["Gamma Tauri", "Lambda Tauri"],
-        ["Lambda Tauri", "Epsilon Tauri"]
-      ]
-    },
-    {
-      "name": "Gemini",
-      "nameUz": "Javzo (Egizaklar)",
-      "lines": [
-        ["Castor", "Pollux"],
-        ["Castor", "Mebsuta"],
-        ["Pollux", "Alhena"],
-        ["Alhena", "Wasat"],
-        ["Wasat", "Mebsuta"],
-        ["Wasat", "Alzirr"]
-      ]
-    },
-    {
-      "name": "Canis Major",
-      "nameUz": "Katta It",
-      "lines": [
-        ["Sirius", "Mirzam"],
-        ["Mirzam", "Adhara"],
-        ["Adhara", "Wezen"],
-        ["Wezen", "Aludra"],
-        ["Wezen", "Sirius"],
-        ["Sirius", "Adhara"]
-      ]
-    },
-    {
-      "name": "Canis Minor",
-      "nameUz": "Kichik It",
-      "lines": [
-        ["Procyon", "Gomeisa"]
-      ]
-    },
-    {
-      "name": "Bootes",
-      "nameUz": "Cho'pon",
-      "lines": [
-        ["Arcturus", "Izar"],
-        ["Izar", "Seginus"],
-        ["Seginus", "Nekkar"],
-        ["Nekkar", "Seginus"],
-        ["Arcturus", "Muphrid"]
-      ]
-    },
-    {
-      "name": "Virgo",
-      "nameUz": "Sunbula",
-      "lines": [
-        ["Spica", "Zavijava"],
-        ["Zavijava", "Vindemiatrix"],
-        ["Spica", "Porrima"],
-        ["Porrima", "Vindemiatrix"]
-      ]
-    },
-    {
-      "name": "Crux",
-      "nameUz": "Janubiy Xoch",
-      "lines": [
-        ["Acrux", "Mimosa"],
-        ["Gacrux", "Imai"]
-      ]
-    },
-    {
-      "name": "Pegasus",
-      "nameUz": "Pegas",
-      "lines": [
-        ["Markab", "Scheat"],
-        ["Scheat", "Alpheratz"],
-        ["Alpheratz", "Algenib"],
-        ["Algenib", "Markab"]
-      ]
-    },
-    {
-      "name": "Andromeda",
-      "nameUz": "Andromeda",
-      "lines": [
-        ["Alpheratz", "Mirach"],
-        ["Mirach", "Almach"]
-      ]
-    },
-    {
-      "name": "Perseus",
-      "nameUz": "Persey",
-      "lines": [
-        ["Mirfak", "Algol"],
-        ["Algol", "Zeta Persei"],
-        ["Mirfak", "Epsilon Persei"]
-      ]
-    },
-    {
-      "name": "Auriga",
-      "nameUz": "Aravachi",
-      "lines": [
-        ["Capella", "Menkalinan"],
-        ["Menkalinan", "Mahasim"],
-        ["Mahasim", "Hassaleh"],
-        ["Hassaleh", "Capella"],
-        ["Capella", "Elnath"]
-      ]
-    }
+    { "name": "Orion", "nameUz": "Javzo", "lines": [["Betelgeuse","Bellatrix"],["Bellatrix","Mintaka"],["Mintaka","Alnilam"],["Alnilam","Alnitak"],["Alnitak","Betelgeuse"],["Mintaka","Rigel"],["Rigel","Saiph"],["Saiph","Alnitak"]] },
+    { "name": "Ursa Major", "nameUz": "Katta Ayiq", "lines": [["Dubhe","Merak"],["Merak","Phecda"],["Phecda","Megrez"],["Megrez","Dubhe"],["Megrez","Alioth"],["Alioth","Mizar"],["Mizar","Alkaid"]] },
+    { "name": "Ursa Minor", "nameUz": "Kichik Ayiq", "lines": [["Polaris","Yildun"],["Yildun","Epsilon Ursae Minoris"],["Epsilon Ursae Minoris","Zeta Ursae Minoris"],["Zeta Ursae Minoris","Eta Ursae Minoris"],["Eta Ursae Minoris","Pherkad"],["Pherkad","Kochab"],["Kochab","Zeta Ursae Minoris"]] },
+    { "name": "Cassiopeia", "nameUz": "Kassiopeya", "lines": [["Schedar","Caph"],["Caph","Gamma Cassiopeiae"],["Gamma Cassiopeiae","Ruchbah"],["Ruchbah","Segin"]] },
+    { "name": "Cygnus", "nameUz": "Oqqush", "lines": [["Deneb","Sadr"],["Sadr","Albireo"],["Gienah","Sadr"],["Sadr","Delta Cygni"]] },
+    { "name": "Lyra", "nameUz": "Lira", "lines": [["Vega","Sheliak"],["Sheliak","Sulafat"],["Sulafat","Delta Lyrae"],["Delta Lyrae","Zeta Lyrae"],["Zeta Lyrae","Vega"]] },
+    { "name": "Aquila", "nameUz": "Burgut", "lines": [["Altair","Tarazed"],["Altair","Alshain"],["Altair","Delta Aquilae"],["Delta Aquilae","Zeta Aquilae"],["Zeta Aquilae","Theta Aquilae"]] },
+    { "name": "Scorpius", "nameUz": "Aqrab", "lines": [["Antares","Acrab"],["Acrab","Dschubba"],["Dschubba","Pi Scorpii"],["Antares","Tau Scorpii"],["Tau Scorpii","Epsilon Scorpii"],["Epsilon Scorpii","Shaula"]] },
+    { "name": "Leo", "nameUz": "Arslon", "lines": [["Regulus","Denebola"],["Regulus","Algieba"],["Algieba","Zosma"],["Zosma","Denebola"],["Regulus","Zavijava"],["Algieba","Adhafera"]] },
+    { "name": "Taurus", "nameUz": "Savr", "lines": [["Aldebaran","Elnath"],["Aldebaran","Theta Tauri"],["Theta Tauri","Gamma Tauri"],["Gamma Tauri","Lambda Tauri"],["Lambda Tauri","Epsilon Tauri"]] },
+    { "name": "Gemini", "nameUz": "Javzo (Egizaklar)", "lines": [["Castor","Pollux"],["Castor","Mebsuta"],["Pollux","Alhena"],["Alhena","Wasat"],["Wasat","Mebsuta"]] },
+    { "name": "Canis Major", "nameUz": "Katta It", "lines": [["Sirius","Mirzam"],["Mirzam","Adhara"],["Adhara","Wezen"],["Wezen","Aludra"],["Wezen","Sirius"],["Sirius","Adhara"]] },
+    { "name": "Canis Minor", "nameUz": "Kichik It", "lines": [["Procyon","Gomeisa"]] },
+    { "name": "Bootes", "nameUz": "Cho'pon", "lines": [["Arcturus","Izar"],["Izar","Seginus"],["Seginus","Nekkar"],["Nekkar","Seginus"],["Arcturus","Muphrid"]] },
+    { "name": "Virgo", "nameUz": "Sunbula", "lines": [["Spica","Zavijava"],["Zavijava","Vindemiatrix"],["Spica","Porrima"],["Porrima","Vindemiatrix"]] },
+    { "name": "Crux", "nameUz": "Janubiy Xoch", "lines": [["Acrux","Mimosa"],["Gacrux","Imai"]] },
+    { "name": "Pegasus", "nameUz": "Pegas", "lines": [["Markab","Scheat"],["Scheat","Alpheratz"],["Alpheratz","Algenib"],["Algenib","Markab"]] },
+    { "name": "Andromeda", "nameUz": "Andromeda", "lines": [["Alpheratz","Mirach"],["Mirach","Almach"]] },
+    { "name": "Perseus", "nameUz": "Persey", "lines": [["Mirfak","Algol"],["Algol","Zeta Persei"],["Mirfak","Epsilon Persei"]] },
+    { "name": "Auriga", "nameUz": "Aravachi", "lines": [["Capella","Menkalinan"],["Menkalinan","Mahasim"],["Mahasim","Hassaleh"],["Hassaleh","Capella"],["Capella","Elnath"]] },
+    { "name": "Aries", "nameUz": "Qo'chqor", "lines": [["Hamal","Sheratan"],["Sheratan","Mesarthim"],["Hamal","41 Arietis"]] },
+    { "name": "Cancer", "nameUz": "Saraton", "lines": [["Altarf","Asellus Borealis"],["Asellus Borealis","Asellus Australis"],["Asellus Australis","Delta Cancri"],["Delta Cancri","Altarf"]] },
+    { "name": "Capricornus", "nameUz": "Echki", "lines": [["Deneb Algedi","Sadalsuud"],["Sadalsuud","Sadalmelik"],["Sadalmelik","Deneb Algedi"]] },
+    { "name": "Cepheus", "nameUz": "Kefey", "lines": [["Alderamin","Alfirk"],["Alfirk","Errai"],["Errai","Garnet Star"],["Garnet Star","Alderamin"]] },
+    { "name": "Corona Borealis", "nameUz": "Shimoliy Toj", "lines": [["Alphecca","Nusakan"],["Nusakan","Theta Coronae Borealis"],["Theta Coronae Borealis","Gamma Coronae Borealis"]] },
+    { "name": "Corvus", "nameUz": "Qarg'a", "lines": [["Gienah Corvi","Algorab"],["Algorab","Kraz"],["Kraz","Beta Corvi"],["Beta Corvi","Gienah Corvi"]] },
+    { "name": "Delphinus", "nameUz": "Delfin", "lines": [["Sualocin","Rotanev"],["Rotanev","Gamma Delphini"],["Gamma Delphini","Delta Delphini"],["Delta Delphini","Sualocin"]] },
+    { "name": "Draco", "nameUz": "Ajdar", "lines": [["Eltanin","Rastaban"],["Rastaban","Xi Draconis"],["Eltanin","Aldhibah"],["Aldhibah","Edasich"],["Edasich","Thuban"]] },
+    { "name": "Eridanus", "nameUz": "Eridan", "lines": [["Achernar","Cursa"],["Cursa","Zaurak"],["Zaurak","Rana"]] },
+    { "name": "Hercules", "nameUz": "Herkules", "lines": [["Kornephoros","Zeta Herculis"],["Zeta Herculis","Pi Herculis"],["Pi Herculis","Eta Herculis"],["Eta Herculis","Kornephoros"],["Kornephoros","Rasalgethi"]] },
+    { "name": "Hydra", "nameUz": "Suv Iloni", "lines": [["Alphard","Gamma Hydrae"],["Gamma Hydrae","Nu Hydrae"],["Nu Hydrae","Beta Hydrae"],["Alphard","Regulus"]] },
+    { "name": "Libra", "nameUz": "Tarozi", "lines": [["Zubenelgenubi","Zubeneschamali"],["Zubenelgenubi","Brachium"],["Zubeneschamali","Gamma Librae"]] },
+    { "name": "Lupus", "nameUz": "Bo'ri", "lines": [["Alpha Lupi","Beta Lupi"],["Beta Lupi","Gamma Lupi"],["Gamma Lupi","Delta Lupi"]] },
+    { "name": "Ophiuchus", "nameUz": "Ilon Ushlovchi", "lines": [["Rasalhague","Cebalrai"],["Cebalrai","Sabik"],["Sabik","Yed Prior"],["Yed Prior","Rasalhague"]] },
+    { "name": "Pisces", "nameUz": "Baliqlar", "lines": [["Eta Piscium","Gamma Piscium"],["Gamma Piscium","Alpha Piscium"],["Alpha Piscium","Omega Piscium"]] },
+    { "name": "Sagitta", "nameUz": "O'q", "lines": [["Gamma Sagittae","Delta Sagittae"],["Delta Sagittae","Alpha Sagittae"],["Alpha Sagittae","Beta Sagittae"]] },
+    { "name": "Sagittarius", "nameUz": "Qavs", "lines": [["Kaus Australis","Kaus Media"],["Kaus Media","Kaus Borealis"],["Kaus Borealis","Phi Sagittarii"],["Phi Sagittarii","Nunki"],["Nunki","Kaus Australis"]] },
+    { "name": "Serpens", "nameUz": "Ilon", "lines": [["Unukalhai","Eta Serpentis"],["Eta Serpentis","Theta Serpentis"]] },
+    { "name": "Taurus Poniatovii", "nameUz": "Buqa", "lines": [["Aldebaran","Zeta Tauri"],["Zeta Tauri","Epsilon Tauri"]] },
+    { "name": "Triangulum", "nameUz": "Uchburchak", "lines": [["Beta Trianguli","Gamma Trianguli"],["Gamma Trianguli","Alpha Trianguli"],["Alpha Trianguli","Beta Trianguli"]] },
+    { "name": "Triangulum Australe", "nameUz": "Janubiy Uchburchak", "lines": [["Atria","Beta Trianguli Australis"],["Beta Trianguli Australis","Gamma Trianguli Australis"],["Gamma Trianguli Australis","Atria"]] },
+    { "name": "Tucana", "nameUz": "Tukan", "lines": [["Alpha Tucanae","Gamma Tucanae"],["Gamma Tucanae","Epsilon Tucanae"]] },
+    { "name": "Vela", "nameUz": "Yelkan", "lines": [["Suhail","Alsephina"],["Alsephina","Markeb"],["Markeb","Mu Velorum"],["Mu Velorum","Suhail"]] },
+    { "name": "Aquarius", "nameUz": "Suv Qovog'i", "lines": [["Sadalsuud","Sadalmelik"],["Sadalmelik","Skat"],["Skat","Sadalsuud"]] },
+    { "name": "Cetus", "nameUz": "Kit", "lines": [["Diphda","Menkar"],["Menkar","Mira"],["Mira","Diphda"],["Diphda","Tau Ceti"]] },
+    { "name": "Columba", "nameUz": "Kabutar", "lines": [["Phact","Wazn"],["Wazn","Epsilon Columbae"]] },
+    { "name": "Coma Berenices", "nameUz": "Berenika Sochi", "lines": [["Diadem","Gamma Comae Berenices"],["Gamma Comae Berenices","Beta Comae Berenices"]] },
+    { "name": "Corona Australis", "nameUz": "Janubiy Toj", "lines": [["Alfecca Meridiana","Beta Coronae Australis"],["Beta Coronae Australis","Gamma Coronae Australis"]] },
+    { "name": "Grus", "nameUz": "Turna", "lines": [["Alnair","Beta Gruis"],["Beta Gruis","Gamma Gruis"],["Gamma Gruis","Delta Gruis"]] },
+    { "name": "Phoenix", "nameUz": "Feniks", "lines": [["Ankaa","Beta Phoenicis"],["Beta Phoenicis","Gamma Phoenicis"]] },
+    { "name": "Piscis Austrinus", "nameUz": "Janubiy Baliq", "lines": [["Fomalhaut","Epsilon Piscis Austrini"],["Epsilon Piscis Austrini","Delta Piscis Austrini"]] }
   ]
 }

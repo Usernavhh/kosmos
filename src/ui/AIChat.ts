@@ -31,6 +31,7 @@ export class AIChat {
         <button class="ai-hdr-btn ai-hamburger" title="Chatlar">☰</button>
         <span class="ai-title">KOSMOS AI</span>
         <div class="ai-header-actions">
+          <button class="ai-hdr-btn ai-brain" title="AI xotirasi">🧠</button>
           <button class="ai-hdr-btn ai-voice-btn" title="Ovoz tanlash">🎙</button>
           <button class="ai-hdr-btn ai-tts" title="Ovozli o'qish">🔇</button>
           <button class="ai-hdr-btn ai-close" aria-label="Yopish">✕</button>
@@ -95,6 +96,13 @@ export class AIChat {
       e.stopPropagation();
       this.toggleVoicePicker();
     });
+    (this.el.querySelector('.ai-brain') as HTMLButtonElement).addEventListener(
+      'click',
+      (e) => {
+        e.stopPropagation();
+        this.showFacts();
+      },
+    );
 
     this.inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -449,5 +457,41 @@ export class AIChat {
       }
     }
     this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
+  }
+
+  private showFacts() {
+    const facts = this.guide.facts.getAll();
+    const html = facts.length === 0
+      ? 'AI hali hech narsani eslab qolmagan. Suhbatlashib, u sizni o\'rganadi.\n'
+      : facts.map((f) => `
+        <div class="ai-fact-item">
+          <div class="ai-fact-text">${f.text}</div>
+          <div class="ai-fact-meta">${f.category} · ${new Date(f.createdAt).toLocaleDateString()}</div>
+        </div>
+      `).join('');
+
+    const existing = document.querySelector('.ai-facts-picker');
+    if (existing) {
+      existing.remove();
+      return;
+    }
+
+    const picker = document.createElement('div');
+    picker.className = 'ai-facts-picker';
+    picker.innerHTML = `
+      AI XOTIRASI (${facts.length})
+
+      ${html}
+
+      ${facts.length > 0 ? '<button class="ai-facts-clear">Hammasini o\'chirish</button>' : ''}
+    `;
+    this.el.appendChild(picker);
+
+    picker.querySelector('.ai-facts-clear')?.addEventListener('click', () => {
+      if (confirm('AI xotirasini tozalash?')) {
+        this.guide.facts.clear();
+        picker.remove();
+      }
+    });
   }
 }

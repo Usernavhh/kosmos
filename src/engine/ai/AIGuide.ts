@@ -1,5 +1,6 @@
 import { AIMemory } from './AIMemory';
 import { ChatStore } from './ChatStore';
+import { MemoryStore } from './MemoryStore';
 import type { AIVoice } from './AIVoice';
 
 export interface SceneContext {
@@ -13,12 +14,14 @@ export interface SceneContext {
 export class AIGuide {
   readonly memory: AIMemory;
   readonly chats: ChatStore;
+  readonly facts: MemoryStore;
   private context: SceneContext = {};
   private busy = false;
 
   constructor(private voice?: AIVoice) {
     this.memory = new AIMemory();
     this.chats = new ChatStore();
+    this.facts = new MemoryStore();
   }
 
   setContext(ctx: SceneContext) {
@@ -45,12 +48,18 @@ export class AIGuide {
       const chat = this.chats.getCurrent();
       if (!chat) throw new Error('Chat topilmadi');
 
-      // MUHIM: ismni DARROV yangilash (agar aytilgan bo'lsa)
+      // Ism yangilash
       this.tryExtractName(message);
+
+      // Faktlarni avtomatik ajratish
+      this.facts.autoExtract(message);
 
       const ctxStr = this.buildSceneContext();
       const isNewChat = chat.messages.length === 0;
-      const fullContext = this.memory.buildContext(ctxStr, isNewChat);
+      const userContext = this.memory.buildContext(ctxStr, isNewChat);
+      const factsContext = this.facts.buildContext(message);
+
+      const fullContext = [userContext, factsContext].filter(Boolean).join('\n\n');
       const history = this.chats.getRecentForContext(chat.id, 6);
 
       this.chats.addMessage(chat.id, 'user', message);
@@ -62,11 +71,7 @@ export class AIGuide {
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          context: fullContext,
-          history,
-        }),
+        body: JSON.stringify({ message, context: fullContext, history }),
       });
 
       if (!res.ok || !res.body) {
@@ -106,7 +111,6 @@ export class AIGuide {
       if (errorMsg && !fullText) throw new Error(errorMsg);
 
       this.chats.addMessage(chat.id, 'assistant', fullText);
-
       this.voice?.flushPending();
 
       return fullText;
@@ -115,39 +119,21 @@ export class AIGuide {
     }
   }
 
-  /**
-   * Matndan ism ajratib olish. DOIM ishlaydi — agar foydalanuvchi
-   * yangi ism aytsa, eskisini almashtiradi.
-   */
   private tryExtractName(message: string) {
-    // Kuchliroq pattern'lar
     const patterns = [
       /mening\s+ismim\s+([A-Za-z\u0400-\u04FF\u0600-\u06FF']{2,20})/i,
       /ismim\s+([A-Za-z\u0400-\u04FF\u0600-\u06FF']{2,20})/i,
       /meni\s+([A-Za-z\u0400-\u04FF\u0600-\u06FF']{2,20})\s+deb\s+chaqir/i,
-      /(?:^|\s)([A-Z][a-z\u0400-\u04FF\u0600-\u06FF']{2,19})(?:\s+man|man$)/,
-      /(?:i'm|i am|my name is)\s+([A-Za-z]{2,20})/i,
     ];
-
-    const blacklist = [
-      'men', 'sen', 'u', 'biz', 'siz', 'ular',
-      'yaxshi', 'salom', 'rahmat', 'nima', 'qanday',
-      'yulduz', 'sayyora', 'koinot', 'quyosh', 'oy',
-    ];
-
+    const blacklist = ['men', 'sen', 'u', 'biz', 'siz', 'ular'];
     for (const p of patterns) {
       const m = message.match(p);
       if (m && m[1]) {
         const name = m[1].trim();
-        if (
-          !blacklist.includes(name.toLowerCase()) &&
-          name.length >= 2 &&
-          name.length <= 20
-        ) {
-          // Faqat joriy ismdan farq qilsa yangilaymiz
+        if (!blacklist.includes(name.toLowerCase()) && name.length >= 2 && name.length <= 20) {
           if (this.memory.getName() !== name) {
             this.memory.setName(name);
-            console.log(`[ai] Ism yangilandi: ${name}`);
+            console.log(`[ai] Ism: ${name}`);
           }
           return;
         }
@@ -162,20 +148,15 @@ export class AIGuide {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: 'ping', context: 'warmup', history: [] }),
       });
-      console.log('[ai] Warmup tugadi');
-    } catch {
-      /* jim */
-    }
+    } catch { /* jim */ }
   }
 
   private buildSceneContext(): string {
     const c = this.context;
     const parts: string[] = [];
-
     if (c.currentPlanet) parts.push(`Tanlangan sayyora: ${c.currentPlanet}`);
     if (c.currentStar) parts.push(`Tanlangan yulduz: ${c.currentStar}`);
     if (c.currentSatellite) parts.push(`Tanlangan yo'ldosh: ${c.currentSatellite}`);
-
     if (c.distanceFromCenter !== undefined) {
       const d = c.distanceFromCenter;
       if (d < 1000) parts.push('Hozir Quyosh sistemasi ichida');
@@ -183,9 +164,7 @@ export class AIGuide {
       else if (d < 1e9) parts.push('Hozir galaktik fazoda');
       else parts.push('Hozir galaktikalar orasida');
     }
-
     if (c.currentTime) parts.push(`Simulyatsiya vaqti: ${c.currentTime}`);
-
     return parts.join('\n');
   }
 }

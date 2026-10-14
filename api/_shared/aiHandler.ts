@@ -1,3 +1,6 @@
+import { buildRAGContext } from './ragHandler';
+import { webSearch } from './webSearch';
+
 /**
  * KOSMOS AI Handler v3
  * - Kalit validatsiyasi (startup)
@@ -305,8 +308,18 @@ Agar **o‘ziga zarar** haqida gap ketsa:
 - **Yaratuvchi:** Abduraxmon (o'zbek dasturchi)
 - **Texnologiya:** TypeScript, Three.js, Vite
 
-# ═══ FOYDALANUVCHI KONTEKSTI ═══
+# ═══ FOYDALANUVCHI VA KONTEKST ═══
 ${context || "Yangi foydalanuvchi."}
+
+# ═══ RAG YO'RIQNOMASI (MUHIM!) ═══
+Agar kontekstda "ISHONCHLI MA'LUMOTLAR" bo'limi bo'lsa:
+- **FAQAT** shu ma'lumotlardan foydalan
+- Manbani ko'rsat (NASA, ESA, IAU, O'zbekiston FA)
+- Ma'lumot bo'lmasa — "aniq bilmayman" de
+
+Agar "VEB QIDIRUV" bo'limi bo'lsa:
+- Yangi ma'lumotlarni ishlatish mumkin
+- "Manba: DuckDuckGo" deb ko'rsat
 
 # ═══ ROL ═══
 - Sen "GPT" / "Gemini" / "Claude" emassan — sen **KOSMOS AI san**
@@ -566,34 +579,42 @@ export async function streamAIChat(
 ): Promise<void> {
   const t0 = Date.now();
 
+  // ═══ RAG — bilim bazasidan ═══
+  const ragContext = buildRAGContext(input.message);
+
+  // ═══ Veb-qidiruv — faqat raqamli/yangi so'zlar uchun ═══
+  const needsWeb =
+    /\b(2024|2025|2026|yangi|kashfiyot|so[''`]?nggi|yaqinda|bugun)\b/i.test(input.message);
+  const webContext = needsWeb ? await webSearch(input.message) : '';
+
+  // Kontekstni boyitamiz
+  const enrichedContext =
+    (input.context ?? '') + ragContext + (webContext ? `\n\n═══ VEB QIDIRUV ═══\n${webContext}` : '');
+
+  const enrichedInput = { ...input, context: enrichedContext };
+
   // 1) Gemini
-  const g = await streamGemini(state, input, onChunk);
+  const g = await streamGemini(state, enrichedInput, onChunk);
   if (g.ok) {
     console.log(`[ai] Jami: ${Date.now() - t0}ms (gemini)`);
     onDone('gemini');
     return;
   }
 
-  // 2) Groq — cooldown bo'lmasa
-  const q = await streamGroq(state, input, onChunk);
+  // 2) Groq
+  const q = await streamGroq(state, enrichedInput, onChunk);
   if (q.ok) {
     console.log(`[ai] Jami: ${Date.now() - t0}ms (groq)`);
     onDone('groq');
     return;
   }
 
-  // Xato xabarini tanlash
-  if (q.reason === 'groq_rate_limit') {
-    onError(
-      'Groq limiti tugadi. 30-60 sekund kuting yoki Gemini kalitini yangilang.',
-    );
-  } else if (q.reason === 'groq_timeout') {
-    onError('AI server sekin. Yana bir marta urinib ko‘ring.');
+  // Xato
+  if (q.reason === 'groq_rate_limit' || g.reason === 'gemini_rate_limit') {
+    onError('Bir daqiqada juda ko\'p savol berdingiz. 30-60 sekund kuting.');
   } else if (g.reason === 'gemini_no_keys') {
-    onError(
-      'Gemini kalitlari ishlamaydi (404). Yangi kalit olish kerak: aistudio.google.com/apikey',
-    );
+    onError('AI server band. Yangi kalit kerak yoki 30 sekund kuting.');
   } else {
-    onError('AI javob bera olmadi. Yana bir marta urinib ko‘ring.');
+    onError('AI javob bera olmadi. Yana urinib ko\'ring.');
   }
 }

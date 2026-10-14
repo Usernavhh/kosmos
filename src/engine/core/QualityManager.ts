@@ -1,5 +1,87 @@
 import type { Preset } from '../../types';
 
+export interface PresetConfig {
+  name: Preset;
+  label: string;
+  renderScale: number;
+  textureSize: number;         // 512 | 1024 | 2048 | 4096
+  ramBudgetMB: number;         // RAM chegarasi
+  sunShader: 'basic' | 'shader';
+  sunGranulation: boolean;
+  sunCorona: boolean;
+  sunFlares: boolean;
+  atmosphere: boolean;
+  normalMaps: boolean;
+  ringsParticles: boolean;
+  bloom: boolean;
+  postfx: 'off' | 'cinematic' | 'space' | 'extreme';
+  webgpu: boolean;
+  starCount: 'min' | 'low' | 'mid' | 'high' | 'max';
+  /** Sayyora segmentlari (sfera silliqligi) */
+  sphereSegments: number;
+  /** Orbit chizig'i segmentlari */
+  orbitSegments: number;
+}
+
+export const PRESETS: Record<Preset, PresetConfig> = {
+  potato: {
+    name: 'potato', label: 'Potato',
+    renderScale: 0.5, textureSize: 512, ramBudgetMB: 100,
+    sunShader: 'basic', sunGranulation: false, sunCorona: false, sunFlares: false,
+    atmosphere: false, normalMaps: false, ringsParticles: false,
+    postfx: 'off', webgpu: false, starCount: 'min',
+    sphereSegments: 24, orbitSegments: 64,
+  },
+  low: {
+    name: 'low', label: 'Low',
+    renderScale: 0.65, textureSize: 1024, ramBudgetMB: 150,
+    sunShader: 'basic', sunGranulation: false, sunCorona: true, sunFlares: false,
+    atmosphere: false, normalMaps: false, ringsParticles: false,
+    postfx: 'off', webgpu: false, starCount: 'low',
+    sphereSegments: 32, orbitSegments: 96,
+  },
+  medium: {
+    name: 'medium', label: 'Medium',
+    renderScale: 0.85, textureSize: 1024, ramBudgetMB: 250,
+    sunShader: 'basic', sunGranulation: true, sunCorona: true, sunFlares: false,
+    atmosphere: true, normalMaps: false, ringsParticles: false,
+    postfx: 'off', webgpu: false, starCount: 'mid',
+    sphereSegments: 48, orbitSegments: 128,
+  },
+  high: {
+    name: 'high', label: 'High',
+    renderScale: 1.0, textureSize: 2048, ramBudgetMB: 400,
+    sunShader: 'shader', sunGranulation: true, sunCorona: true, sunFlares: true,
+    atmosphere: true, normalMaps: true, ringsParticles: true,
+    postfx: 'cinematic', webgpu: false, starCount: 'high',
+    sphereSegments: 64, orbitSegments: 256,
+  },
+  ultra: {
+    name: 'ultra', label: 'Ultra',
+    renderScale: 1.0, textureSize: 2048, ramBudgetMB: 600,
+    sunShader: 'shader', sunGranulation: true, sunCorona: true, sunFlares: true,
+    atmosphere: true, normalMaps: true, ringsParticles: true,
+    postfx: 'space', webgpu: false, starCount: 'high',
+    sphereSegments: 96, orbitSegments: 384,
+  },
+  'ultra-plus': {
+    name: 'ultra-plus', label: 'Ultra+',
+    renderScale: 1.25, textureSize: 4096, ramBudgetMB: 1024,
+    sunShader: 'shader', sunGranulation: true, sunCorona: true, sunFlares: true,
+    atmosphere: true, normalMaps: true, ringsParticles: true,
+    postfx: 'space', webgpu: false, starCount: 'max',
+    sphereSegments: 128, orbitSegments: 512,
+  },
+  extreme: {
+    name: 'extreme', label: 'EXTREME',
+    renderScale: 1.5, textureSize: 4096, ramBudgetMB: 2048,
+    sunShader: 'shader', sunGranulation: true, sunCorona: true, sunFlares: true,
+    atmosphere: true, normalMaps: true, ringsParticles: true,
+    postfx: 'extreme', webgpu: true, starCount: 'max',
+    sphereSegments: 192, orbitSegments: 768,
+  },
+};
+
 export class QualityManager {
   preset: Preset;
   renderScale: number;
@@ -11,24 +93,19 @@ export class QualityManager {
 
   constructor(params: URLSearchParams) {
     const q = params.get('quality') as Preset | null;
-    this.preset = q ?? 'potato';
+    this.preset = q && PRESETS[q] ? q : 'potato';
 
     const s = parseFloat(params.get('scale') ?? '');
+    const cfg = PRESETS[this.preset];
     this.renderScale = !isNaN(s)
-      ? Math.min(1, Math.max(0.4, s))
-      : this.defaultScaleFor(this.preset);
+      ? Math.min(2, Math.max(0.4, s))
+      : cfg.renderScale;
 
     this.autoAdjust = !params.has('scale');
   }
 
-  private defaultScaleFor(p: Preset): number {
-    switch (p) {
-      case 'potato': return 0.6;
-      case 'low':    return 0.75;
-      case 'medium': return 1.0;
-      case 'high':   return 1.0;
-      case 'ultra':  return 1.0;
-    }
+  getConfig(): PresetConfig {
+    return PRESETS[this.preset];
   }
 
   update(dt: number) {
@@ -42,10 +119,11 @@ export class QualityManager {
   }
 
   private autoAdjustScale() {
+    if (this.preset === 'extreme') return;
     if (this.fps < 25 && this.renderScale > 0.5) {
       this.renderScale = Math.max(0.5, this.renderScale - 0.1);
-    } else if (this.fps > 55 && this.renderScale < 1) {
-      this.renderScale = Math.min(1, this.renderScale + 0.05);
+    } else if (this.fps > 55 && this.renderScale < PRESETS[this.preset].renderScale) {
+      this.renderScale = Math.min(PRESETS[this.preset].renderScale, this.renderScale + 0.05);
     }
   }
 }

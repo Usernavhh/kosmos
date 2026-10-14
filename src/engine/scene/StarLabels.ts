@@ -27,8 +27,8 @@ export function createStarLabels(
   }
 
   // ========== Nom yorliqlari (sprites) ==========
-  // Faqat mag < 1.5 (eng yorqin) — ekran to'lmasin
-  const LABEL_MAG_LIMIT = 1.5;
+  // Faqat mag < 1.8 (eng yorqin) — ekran to'lmasin
+  const LABEL_MAG_LIMIT = 1.8;
 
   for (const s of stars) {
     if (s.mag > LABEL_MAG_LIMIT) continue;
@@ -43,9 +43,9 @@ export function createStarLabels(
 
   // ========== Turkum chiziqlari ==========
   const lineMat = new THREE.LineBasicMaterial({
-    color: 0x4a80c0,
+    color: 0x5a9fe0,
     transparent: true,
-    opacity: 0.55,
+    opacity: 0.7,
   });
 
   for (const c of constellations) {

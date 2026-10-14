@@ -6,10 +6,13 @@ import {
   type NamedStar,
 } from '../../data/starNames';
 import { Controls, type ControlsCallbacks } from '../core/Controls';
+import type { PresetConfig } from '../core/QualityManager';
+import type { MemoryTracker } from '../core/MemoryTracker';
 import { TimeManager } from '../core/TimeManager';
 import { setupTimeKeyboard } from '../core/Keyboard';
 import { CameraFly } from '../core/CameraFly';
 import { TourManager, type TourCallbacks } from '../core/TourManager';
+import { FloatingOrigin } from '../core/FloatingOrigin';
 import { createPlanets, type PlanetsHandle, PLANETS_META } from './Planets';
 import { createStarLabels, type StarLabelsHandle } from './StarLabels';
 import { createAsteroids, type AsteroidsHandle } from './Asteroids';
@@ -17,6 +20,8 @@ import { createComets, type CometsHandle } from './Comets';
 import { createSatellites, type SatellitesHandle } from './Satellites';
 import { createGalaxies, type GalaxiesHandle } from './Galaxies';
 import { createExoplanets, type ExoplanetsHandle } from './Exoplanets';
+import { createBlackHole, type BlackHoleHandle } from './BlackHole';
+import { createPulsar, createSupernova, createEclipse, type PulsarHandle, type SupernovaHandle, type EclipseHandle } from './CosmicEvents';
 import type { PlanetInfo } from '../../ui/PlanetInfo';
 import type { StarInfo } from '../../ui/StarInfo';
 import type { SatInfo } from '../../ui/SatInfo';
@@ -31,6 +36,15 @@ export interface SceneHandle {
   getSpeed(): number;
   resize(width: number, height: number): void;
   update(dt: number): void;
+  __flyToPlanet(i: number): void;
+  __goHome(): void;
+  __flyToSgrA(): void;
+  __flyToMilkyWay(): void;
+  __flyToAndromeda(): void;
+  __flyToProxima(): void;
+  __triggerEclipse(): void;
+  __flyToPulsar(): void;
+  __flyToSupernova(): void;
 }
 
 const MIN_SPEED = 10;
@@ -43,6 +57,8 @@ export function createScene(
   planetInfo: PlanetInfo,
   starInfo: StarInfo,
   satInfo: SatInfo,
+  config: PresetConfig,
+  memory: MemoryTracker,
   controlsCallbacks: ControlsCallbacks = {},
   tourCallbacks: TourCallbacks = {},
 ): SceneHandle {
@@ -58,12 +74,13 @@ export function createScene(
   const time = new TimeManager();
   const fly = new CameraFly();
   const tours = new TourManager(tourCallbacks);
+  const floatingOrigin = new FloatingOrigin();
 
   setupTimeKeyboard(time);
 
   let currentIndex: number | null = null;
 
-  const planets: PlanetsHandle = createPlanets();
+  const planets = createPlanets(config, memory);
   scene.add(planets.group);
 
   const asteroids: AsteroidsHandle = createAsteroids();
@@ -80,6 +97,56 @@ export function createScene(
 
   const exoplanets: ExoplanetsHandle = createExoplanets();
   scene.add(exoplanets.group);
+
+  // Qora tuynuk — Sgr A* (galaktika markazida)
+  let blackHole: BlackHoleHandle | null = null;
+  setTimeout(() => {
+    blackHole = createBlackHole(200000);
+    blackHole.mesh.position.copy(galaxies.sgrAPosition);
+    scene.add(blackHole.mesh);
+    console.log('[scene] Sgr A* qo\'shildi');
+  }, 1000);
+
+  // ═══════════ Dinamik hodisalar ═══════════
+  let pulsar: PulsarHandle | null = null;
+  let supernova: SupernovaHandle | null = null;
+  let eclipse: EclipseHandle | null = null;
+
+  setTimeout(() => {
+    // Pulsar — 200 ly uzoqda
+    pulsar = createPulsar();
+    pulsar.group.position.set(1.5e7, 0.5e7, 2e7);
+    scene.add(pulsar.group);
+
+    // Supernova qoldig'i — 500 ly uzoqda
+    supernova = createSupernova(300000);
+    supernova.group.position.set(-2e7, 1e7, -1.5e7);
+    scene.add(supernova.group);
+
+    // Quyosh tutilishi (boshlang'ichda yashirin)
+    eclipse = createEclipse(new THREE.Vector3(0, 0, 0));
+    eclipse.group.position.set(0, 0, 0);
+    eclipse.group.visible = false;
+    scene.add(eclipse.group);
+
+    console.log('[scene] Dinamik hodisalar yuklandi');
+  }, 1500);
+
+  // Control panel'dan tutilish
+  window.addEventListener('kosmos-eclipse', () => {
+    if (eclipse) {
+      eclipse.group.visible = true;
+      eclipse.trigger();
+      // Kamerani Quyoshga qaratish
+      camera.position.set(0, 3000, 12000);
+      const dummy = new THREE.Object3D();
+      dummy.position.set(0, 3000, 12000);
+      dummy.lookAt(0, 0, 0);
+      camera.quaternion.copy(dummy.quaternion);
+      controls.syncFromCamera();
+      console.log('[scene] Quyosh tutilishi boshlandi');
+    }
+  });
 
   let starsMesh: THREE.Points | null = null;
   let currentSpeed = MIN_SPEED;
@@ -101,25 +168,57 @@ export function createScene(
     })
     .catch((err) => console.error('[scene] Nomlar xatosi:', err));
 
+  // ═══════════════════════════════════════════
+  // RESET + FLY — barcha flylar shu orqali
+  // ═══════════════════════════════════════════
+  function resetAndFly(targetPos: THREE.Vector3, viewDist: number, duration: number) {
+    // 1) Floating origin reset — absolut koordinatalarga qaytarish
+    floatingOrigin.reset(scene, camera, HOME_POSITION);
+    controls.syncFromCamera();
+
+    // 2) Floating origin'ni pauza qilish (fly davomida)
+    floatingOrigin.pause();
+
+    // 3) Yashirin teleport: juda uzoq bo'lsa — yaqinlashtirish
+    const dist = camera.position.distanceTo(targetPos);
+    if (dist > 1e7) {
+      const dir = new THREE.Vector3().subVectors(camera.position, targetPos);
+      if (dir.lengthSq() < 1) dir.set(0, 0.3, 1);
+      dir.normalize();
+
+      const jumpPos = targetPos.clone().add(dir.multiplyScalar(viewDist * 100));
+      camera.position.copy(jumpPos);
+      controls.syncFromCamera();
+      console.log(`[scene] Teleport: ${(dist / 1e6).toFixed(0)}M → ${viewDist * 100}`);
+    }
+
+    // 4) Yaqin masofaga fly
+    const finalDist = camera.position.distanceTo(targetPos);
+    const realDuration = Math.min(
+      duration,
+      Math.max(1.0, 0.5 + Math.log10(Math.max(finalDist, 1)) * 0.4),
+    );
+
+    fly.start(camera, targetPos.clone().add(
+      new THREE.Vector3().subVectors(camera.position, targetPos).normalize().multiplyScalar(viewDist)
+    ), targetPos, realDuration);
+  }
+
   function flyToIndex(index: number) {
     const meta = PLANETS_META[index];
     const pos = planets.getPosition(meta.body);
     if (!pos) return;
 
     const radius = planets.getRadius(meta.body);
-    const dir = new THREE.Vector3().subVectors(camera.position, pos);
-    if (dir.lengthSq() < 1) dir.set(0, 0.3, 1);
-    dir.normalize();
+    const viewDist = radius * 5;
 
-    const targetPos = pos.clone().add(dir.multiplyScalar(radius * 5));
-    const dist = camera.position.distanceTo(targetPos);
-    const duration = Math.min(4, Math.max(1.5, 0.5 + Math.log10(dist) * 0.5));
+    resetAndFly(pos, viewDist, 3);
 
-    fly.start(camera, targetPos, pos, duration);
     currentIndex = index;
     starInfo.hide();
     satInfo.hide();
     planetInfo.show(meta);
+    console.log(`[scene] fly: ${meta.name}`);
   }
 
   function nextPlanet() {
@@ -137,16 +236,14 @@ export function createScene(
   function goHome() {
     fly.stop();
     tours.stop();
-    camera.position.copy(HOME_POSITION);
-    const dummy = new THREE.Object3D();
-    dummy.position.copy(HOME_POSITION);
-    dummy.lookAt(0, 0, 0);
-    camera.quaternion.copy(dummy.quaternion);
+    floatingOrigin.resume();
+    floatingOrigin.reset(scene, camera, HOME_POSITION);
     controls.syncFromCamera();
     currentIndex = null;
     planetInfo.hide();
     starInfo.hide();
     satInfo.hide();
+    console.log('[scene] Uyga qaytdik');
   }
 
   window.addEventListener('keydown', (e) => {
@@ -189,7 +286,9 @@ export function createScene(
   return {
     scene, camera, controls, time, tours,
 
-    getDistance() { return camera.position.length(); },
+    getDistance() {
+      return floatingOrigin.getTotalDistance(camera.position);
+    },
     getSpeed() { return currentSpeed; },
 
     resize(width, height) {
@@ -202,10 +301,13 @@ export function createScene(
         tours.update(camera, dt);
       } else if (fly.isActive()) {
         fly.update(camera, dt);
-        if (!fly.isActive()) controls.syncFromCamera();
+        if (!fly.isActive()) {
+          controls.syncFromCamera();
+          floatingOrigin.resume();
+        }
       } else {
-        const distFromCenter = camera.position.length();
-        const t = Math.min(1, Math.log10(Math.max(distFromCenter, 1)) / 10);
+        const totalDist = floatingOrigin.getTotalDistance(camera.position);
+        const t = Math.min(1, Math.log10(Math.max(totalDist, 1)) / 10);
         currentSpeed = MIN_SPEED * Math.pow(MAX_SPEED / MIN_SPEED, t);
         controls.update(dt, currentSpeed);
       }
@@ -216,6 +318,78 @@ export function createScene(
       asteroids.update(now);
       comets.update(now);
       satellites.update(now);
+
+      if (blackHole) blackHole.update(camera);
+      if (pulsar) pulsar.update(dt);
+      if (supernova) supernova.update(dt);
+      if (eclipse) eclipse.update(dt, camera);
+
+      floatingOrigin.update(scene, camera);
+    },
+
+    // ═══════════ SEARCH UCHUN ═══════════
+    __flyToPlanet(i: number) {
+      flyToIndex(i);
+    },
+    __goHome() {
+      goHome();
+    },
+    __flyToSgrA() {
+      const target = galaxies.sgrAPosition.clone();
+      resetAndFly(target, 800_000, 4);
+      planetInfo.hide();
+      starInfo.hide();
+      satInfo.hide();
+    },
+    __flyToMilkyWay() {
+      const target = galaxies.milkyWayCenter.clone();
+      resetAndFly(target, 20_000_000, 5);
+      planetInfo.hide();
+      starInfo.hide();
+      satInfo.hide();
+    },
+    __flyToAndromeda() {
+      const target = galaxies.andromedaCenter.clone();
+      resetAndFly(target, 100_000_000, 6);
+      planetInfo.hide();
+      starInfo.hide();
+      satInfo.hide();
+    },
+    __flyToProxima() {
+      const ra = (217.43 * Math.PI) / 180;
+      const dec = (-62.68 * Math.PI) / 180;
+      const dist = 4.24 * 153374;
+      const target = new THREE.Vector3(
+        Math.cos(dec) * Math.cos(ra) * dist,
+        Math.sin(dec) * dist,
+        Math.cos(dec) * Math.sin(ra) * dist,
+      );
+      resetAndFly(target, 200_000, 5);
+      planetInfo.hide();
+      starInfo.hide();
+      satInfo.hide();
+    },
+    __triggerEclipse() {
+      if (eclipse) {
+        eclipse.group.visible = true;
+        eclipse.trigger();
+        camera.position.set(0, 3000, 12000);
+        const dummy = new THREE.Object3D();
+        dummy.position.set(0, 3000, 12000);
+        dummy.lookAt(0, 0, 0);
+        camera.quaternion.copy(dummy.quaternion);
+        controls.syncFromCamera();
+      }
+    },
+    __flyToPulsar() {
+      if (!pulsar) return;
+      const target = pulsar.group.position.clone();
+      resetAndFly(target, 1_000_000, 5);
+    },
+    __flyToSupernova() {
+      if (!supernova) return;
+      const target = supernova.group.position.clone();
+      resetAndFly(target, 1_500_000, 5);
     },
   };
 }

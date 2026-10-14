@@ -1,5 +1,5 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite';
-import { streamAIChat, createKeyState } from './api/_shared/aiHandler';
+import { streamAIChat, createKeyState } from './api/shared/aiHandler';
 
 function aiProxyPlugin(env: Record<string, string>): Plugin {
   for (const [k, v] of Object.entries(env)) {

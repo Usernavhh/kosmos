@@ -1,4 +1,4 @@
-import { KNOWLEDGE, type KnowledgeEntry } from '../../src/data/knowledge';
+import { KNOWLEDGE, type KnowledgeEntry } from './knowledge';
 
 const STOP_WORDS = new Set([
   'va', 'u', 'bu', 'bir', 'men', 'sen', 'ha', 'yoq', 'lekin', 'yoki',
@@ -14,9 +14,6 @@ function tokenize(text: string): string[] {
     .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
 }
 
-/**
- * Savolga eng mos 3 ta faktni topish.
- */
 export function retrieveKnowledge(query: string, limit = 3): KnowledgeEntry[] {
   const qWords = tokenize(query);
   if (qWords.length === 0) return [];
@@ -35,9 +32,7 @@ export function retrieveKnowledge(query: string, limit = 3): KnowledgeEntry[] {
       }
     }
 
-    // Savolning kalit so'ziga moslik darajasi
     const score = overlap * 10 / Math.max(qWords.length, 1);
-
     return { entry, score };
   });
 
@@ -48,9 +43,6 @@ export function retrieveKnowledge(query: string, limit = 3): KnowledgeEntry[] {
     .map((s) => s.entry);
 }
 
-/**
- * RAG context string yaratish.
- */
 export function buildRAGContext(query: string): string {
   const relevant = retrieveKnowledge(query, 3);
   if (relevant.length === 0) return '';

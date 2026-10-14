@@ -6,6 +6,8 @@ export interface ControlPanelCallbacks {
   onSearchOpen: () => void;
   onGamesOpen: () => void;
   onPhotoToggle: () => void;
+  onSettingsOpen: () => void;
+  onSchoolOpen: () => void;
 }
 
 export class ControlPanel {
@@ -29,6 +31,8 @@ export class ControlPanel {
       <button class="cp-btn cp-tour3" title="Ulug'bek (9)">⭐</button>
       <div class="cp-divider"></div>
       <button class="cp-btn cp-eclipse" title="Tutilish (0)">🌑</button>
+      <button class="cp-btn cp-settings" title="Sozlamalar">⚙</button>
+      <button class="cp-btn cp-school" title="Maktab moduli">🎓</button>
       <button class="cp-btn cp-help" title="Yordam">?</button>
     `;
     document.body.appendChild(this.el);
@@ -48,6 +52,8 @@ export class ControlPanel {
     bind('.cp-tour1', () => this.cb.onTourStart(0));
     bind('.cp-tour2', () => this.cb.onTourStart(1));
     bind('.cp-tour3', () => this.cb.onTourStart(2));
+    bind('.cp-settings', () => this.cb.onSettingsOpen());
+    bind('.cp-school', () => this.cb.onSchoolOpen());
     bind('.cp-help', () => this.cb.onHelpToggle());
     bind('.cp-eclipse', () => {
       window.dispatchEvent(new CustomEvent('kosmos-eclipse'));

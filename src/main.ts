@@ -12,6 +12,8 @@ import { TurboSelector } from './ui/TurboSelector';
 import { TourUI } from './ui/TourUI';
 import { AIChat } from './ui/AIChat';
 import { ControlPanel } from './ui/ControlPanel';
+import { SettingsPanel } from './ui/SettingsPanel';
+import { SchoolPanel } from './ui/SchoolPanel';
 import { Search, type SearchItem } from './ui/Search';
 import { GamesUI } from './ui/GamesUI';
 import { TOURS } from './data/tours';
@@ -145,6 +147,17 @@ const searchItems: SearchItem[] = [
 
 search.setItems(searchItems);
 
+const settingsPanel = new SettingsPanel(quality, {
+  onPresetChange: (preset) => {
+    console.log('[settings] Preset:', preset);
+    const url = new URL(location.href);
+    url.searchParams.set('quality', preset);
+    location.href = url.toString();
+  },
+});
+
+const schoolPanel = new SchoolPanel();
+
 // ═══════════ CONTROL PANEL ═══════════
 const controlPanel = new ControlPanel({
   onAudioToggle: async () => {
@@ -158,6 +171,8 @@ const controlPanel = new ControlPanel({
   onSearchOpen: () => search.openSearch(),
   onGamesOpen: () => gamesUI.openMenu(),
   onPhotoToggle: () => photoMode.toggle(),
+  onSettingsOpen: () => settingsPanel.toggle(),
+  onSchoolOpen: () => schoolPanel.toggle(),
 });
 
 setTimeout(() => guide.warmup(), 3000);

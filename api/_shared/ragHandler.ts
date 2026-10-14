@@ -1,4 +1,4 @@
-import { KNOWLEDGE, type KnowledgeEntry } from './knowledge';
+import { KNOWLEDGE, type KnowledgeEntry } from './knowledge.js';
 
 const STOP_WORDS = new Set([
   'va', 'u', 'bu', 'bir', 'men', 'sen', 'ha', 'yoq', 'lekin', 'yoki',

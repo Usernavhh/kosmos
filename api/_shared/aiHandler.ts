@@ -1,5 +1,5 @@
-import { buildRAGContext } from './ragHandler';
-import { webSearch } from './webSearch';
+import { buildRAGContext } from './ragHandler.js';
+import { webSearch } from './webSearch.js';
 
 /**
  * KOSMOS AI Handler v3

@@ -1,5 +1,5 @@
-import { streamAIChat, createKeyState } from '../_shared/aiHandler';
-import { fetchTTS } from '../_shared/ttsHandler';
+import { streamAIChat, createKeyState } from '../_shared/aiHandler.js';
+import { fetchTTS } from '../_shared/ttsHandler.js';
 
 const state = createKeyState();
 

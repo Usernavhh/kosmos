@@ -16,7 +16,7 @@ CSV_PATH = BASE / "data" / "hyg.csv"
 OUT_PATH = BASE.parent / "public" / "data" / "stars.bin"
 OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-MAG_LIMIT = 8.0
+MAG_LIMIT = 10.5
 
 if not CSV_PATH.exists():
     print(f"XATO: {CSV_PATH} topilmadi")

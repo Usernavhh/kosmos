@@ -1,48 +1,95 @@
-export interface Star {
-  x: number;
-  y: number;
-  z: number;
-  mag: number;
-  color: number;
-  dist: number; // parsek
-}
+"""
+KOSMOS — Data Factory
+Haqiqiy HYG katalogini binar formatga o'giradi.
+Chiqish: public/data/stars.bin
+"""
 
-const MAGIC = 'KOSMOS01';
-const HEADER_SIZE = 12;
-const STAR_SIZE = 24; // 6 × float32
+import numpy as np
+import pandas as pd
+from pathlib import Path
+import sys
 
-export async function loadStars(url = '/data/stars.bin'): Promise<Star[]> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Yulduz fayli yuklanmadi: ${res.status}`);
+BASE = Path(__file__).parent
+CSV_PATH = BASE / "data" / "hyg.csv"
+OUT_PATH = BASE.parent / "public" / "data" / "stars.bin"
+OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-  const buffer = await res.arrayBuffer();
-  const view = new DataView(buffer);
+# ═══ O'ZGARTIRILDI: 8.0 → 10.5 (119k yulduz) ═══
+MAG_LIMIT = 10.5
 
-  let magic = '';
-  for (let i = 0; i < 8; i++) {
-    magic += String.fromCharCode(view.getUint8(i));
-  }
-  if (magic !== MAGIC) {
-    throw new Error(`Noto'g'ri format: ${magic}, kutilgan: ${MAGIC}`);
-  }
+if not CSV_PATH.exists():
+    print(f"XATO: {CSV_PATH} topilmadi")
+    sys.exit(1)
 
-  const count = view.getUint32(8, true);
-  console.log(`[stars] ${count} yulduz yuklandi, ${buffer.byteLength} bayt`);
+print(f"CSV o'qilmoqda: {CSV_PATH}")
+df = pd.read_csv(CSV_PATH, low_memory=False)
+print(f"Jami qatorlar: {len(df)}")
 
-  const stars: Star[] = new Array(count);
-  const offset = HEADER_SIZE;
+required = ["ra", "dec", "mag"]
+for col in required:
+    if col not in df.columns:
+        print(f"XATO: '{col}' ustuni yo'q")
+        sys.exit(1)
 
-  for (let i = 0; i < count; i++) {
-    const o = offset + i * STAR_SIZE;
-    stars[i] = {
-      x: view.getFloat32(o + 0, true),
-      y: view.getFloat32(o + 4, true),
-      z: view.getFloat32(o + 8, true),
-      mag: view.getFloat32(o + 12, true),
-      color: view.getFloat32(o + 16, true),
-      dist: view.getFloat32(o + 20, true),
-    };
-  }
+df = df.dropna(subset=required)
+print(f"ra/dec/mag to'liq: {len(df)}")
 
-  return stars;
-}
+df = df[df["mag"] <= MAG_LIMIT].copy()
+print(f"mag <= {MAG_LIMIT}: {len(df)}")
+
+df = df[df["mag"] > -10].copy()
+print(f"Quyosh olib tashlandi: {len(df)}")
+
+# RA/Dec -> x, y, z
+ra_rad = np.deg2rad(df["ra"].values.astype(np.float64) * 15.0)
+dec_rad = np.deg2rad(df["dec"].values.astype(np.float64))
+
+x = (np.cos(dec_rad) * np.cos(ra_rad)).astype(np.float32)
+y = (np.cos(dec_rad) * np.sin(ra_rad)).astype(np.float32)
+z = (np.sin(dec_rad)).astype(np.float32)
+
+mag = df["mag"].values.astype(np.float32)
+
+if "ci" in df.columns:
+    ci = df["ci"].values.astype(np.float64)
+    ci = np.where(np.isnan(ci), 0.5, ci)
+    ci_norm = np.clip((ci + 0.4) / 2.4, 0.0, 1.0).astype(np.float32)
+else:
+    ci_norm = np.full(len(df), 0.5, dtype=np.float32)
+
+if "dist" in df.columns:
+    dist_pc = df["dist"].values.astype(np.float64)
+    dist_pc = np.where(np.isfinite(dist_pc) & (dist_pc > 0), dist_pc, 1000.0)
+    dist_pc = dist_pc.astype(np.float32)
+else:
+    dist_pc = np.full(len(df), 100.0, dtype=np.float32)
+
+# NaN/Inf filtri
+valid = (
+    np.isfinite(x) & np.isfinite(y) & np.isfinite(z) &
+    np.isfinite(mag) & np.isfinite(ci_norm) & np.isfinite(dist_pc)
+)
+n_bad = int((~valid).sum())
+if n_bad > 0:
+    print(f"Ogohlantirish: {n_bad} NaN/Inf olib tashlandi")
+    x, y, z, mag, ci_norm, dist_pc = [a[valid] for a in [x, y, z, mag, ci_norm, dist_pc]]
+
+# Saralash: eng yorqinlar birinchi
+order = np.argsort(mag)
+x, y, z, mag, ci_norm, dist_pc = [a[order] for a in [x, y, z, mag, ci_norm, dist_pc]]
+
+print(f"Yakuniy: {len(x)} yulduz")
+
+data = np.column_stack([x, y, z, mag, ci_norm, dist_pc]).astype(np.float32)
+
+MAGIC = b"KOSMOS01"
+with OUT_PATH.open("wb") as f:
+    f.write(MAGIC)
+    f.write(np.uint32(len(data)).tobytes())
+    f.write(data.tobytes())
+
+size = OUT_PATH.stat().st_size
+print()
+print(f"TAYYOR: {OUT_PATH}")
+print(f"Yulduzlar: {len(data)}")
+print(f"Fayl: {size} bayt ({size / 1024 / 1024:.2f} MB)")

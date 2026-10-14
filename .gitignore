@@ -18,4 +18,5 @@ tools/.venv/
 
 workers/**/node_modules/
 workers/**/.wrangler/
-workers/**/dist/
+workers/**/dist/dist
+node_modules

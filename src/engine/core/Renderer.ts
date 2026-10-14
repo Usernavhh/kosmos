@@ -18,7 +18,7 @@ export class Renderer {
     console.log(`[renderer] Preset: ${config.label}, PostFX: ${config.postfx}`);
   }
 
-  attach(scene: THREE.Scene, camera: THREE.Camera) {
+  attach(scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
     const postfxConfig = POSTFX_PRESETS[this.config.postfx];
 
     if (postfxConfig && (postfxConfig.bloom || postfxConfig.toneMapping !== 'none')) {
@@ -47,6 +47,10 @@ export class Renderer {
     } else {
       this.backend.render(scene, camera);
     }
+  }
+
+  updateDOF(turboMult: number) {
+    this.postfx?.updateDOF(turboMult);
   }
 
   dispose() {

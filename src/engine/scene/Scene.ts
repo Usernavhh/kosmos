@@ -22,6 +22,7 @@ import { createGalaxies, type GalaxiesHandle } from './Galaxies';
 import { createExoplanets, type ExoplanetsHandle } from './Exoplanets';
 import { createBlackHole, type BlackHoleHandle } from './BlackHole';
 import { createPulsar, createSupernova, createEclipse, type PulsarHandle, type SupernovaHandle, type EclipseHandle } from './CosmicEvents';
+import { StarStreaks } from './StarStreaks';
 import type { PlanetInfo } from '../../ui/PlanetInfo';
 import type { StarInfo } from '../../ui/StarInfo';
 import type { SatInfo } from '../../ui/SatInfo';
@@ -151,12 +152,19 @@ export function createScene(
   let starsMesh: THREE.Points | null = null;
   let currentSpeed = MIN_SPEED;
   let starLabels: StarLabelsHandle | null = null;
+  let starStreaks: StarStreaks | null = null;
 
   loadStars('/data/stars.bin')
     .then((stars) => {
-      starsMesh = createStarPoints(stars);
+      // Preset bo'yicha cheklash
+      const limit = Math.min(stars.length, config.starLimit);
+      const limited = stars.slice(0, limit);
+
+      starsMesh = createStarPoints(limited);
       scene.add(starsMesh);
-      console.log(`[scene] ${stars.length} yulduz yuklandi`);
+      starStreaks = new StarStreaks(starsMesh);
+
+      console.log(`[scene] ${limited.length} / ${stars.length} yulduz yuklandi (preset: ${config.label})`);
     })
     .catch((err) => console.error('[scene] Yulduz xatosi:', err));
 
@@ -325,6 +333,14 @@ export function createScene(
       if (eclipse) eclipse.update(dt, camera);
 
       floatingOrigin.update(scene, camera);
+
+      // Warp effekti — turbo multiplier bo'yicha
+      if (starStreaks) {
+        const turbo = controls.getTurboMultiplier();
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        starStreaks.update(turbo, dir);
+      }
     },
 
     // ═══════════ SEARCH UCHUN ═══════════

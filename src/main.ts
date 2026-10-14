@@ -301,6 +301,10 @@ function loop(now: number) {
   quality.update(dt);
   if (prevScale !== quality.renderScale) applySize();
 
+  // DOF yangilash (turbo paytida kuchayadi)
+  const turboMult = sceneHandle.controls.getTurboMultiplier();
+  renderer.updateDOF(turboMult);
+
   renderer.render(sceneHandle.scene, sceneHandle.camera, dt);
   devPanel.update(dt, sceneHandle.getDistance(), sceneHandle.getSpeed());
 }

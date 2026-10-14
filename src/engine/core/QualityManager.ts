@@ -13,8 +13,8 @@ export interface PresetConfig {
   atmosphere: boolean;
   normalMaps: boolean;
   ringsParticles: boolean;
-  bloom: boolean;
   postfx: 'off' | 'cinematic' | 'space' | 'extreme';
+  starLimit: number; // ko‘rsatiladigan yulduzlar soni
   webgpu: boolean;
   starCount: 'min' | 'low' | 'mid' | 'high' | 'max';
   /** Sayyora segmentlari (sfera silliqligi) */
@@ -29,7 +29,7 @@ export const PRESETS: Record<Preset, PresetConfig> = {
     renderScale: 0.5, textureSize: 512, ramBudgetMB: 100,
     sunShader: 'basic', sunGranulation: false, sunCorona: false, sunFlares: false,
     atmosphere: false, normalMaps: false, ringsParticles: false,
-    postfx: 'off', webgpu: false, starCount: 'min',
+    postfx: 'off', starLimit: 20000, webgpu: false, starCount: 'min',
     sphereSegments: 24, orbitSegments: 64,
   },
   low: {
@@ -37,7 +37,7 @@ export const PRESETS: Record<Preset, PresetConfig> = {
     renderScale: 0.65, textureSize: 1024, ramBudgetMB: 150,
     sunShader: 'basic', sunGranulation: false, sunCorona: true, sunFlares: false,
     atmosphere: false, normalMaps: false, ringsParticles: false,
-    postfx: 'off', webgpu: false, starCount: 'low',
+    postfx: 'off', starLimit: 40000, webgpu: false, starCount: 'low',
     sphereSegments: 32, orbitSegments: 96,
   },
   medium: {
@@ -45,7 +45,7 @@ export const PRESETS: Record<Preset, PresetConfig> = {
     renderScale: 0.85, textureSize: 1024, ramBudgetMB: 250,
     sunShader: 'basic', sunGranulation: true, sunCorona: true, sunFlares: false,
     atmosphere: true, normalMaps: false, ringsParticles: false,
-    postfx: 'off', webgpu: false, starCount: 'mid',
+    postfx: 'off', starLimit: 60000, webgpu: false, starCount: 'mid',
     sphereSegments: 48, orbitSegments: 128,
   },
   high: {
@@ -53,7 +53,7 @@ export const PRESETS: Record<Preset, PresetConfig> = {
     renderScale: 1.0, textureSize: 2048, ramBudgetMB: 400,
     sunShader: 'shader', sunGranulation: true, sunCorona: true, sunFlares: true,
     atmosphere: true, normalMaps: true, ringsParticles: true,
-    postfx: 'cinematic', webgpu: false, starCount: 'high',
+    postfx: 'cinematic', starLimit: 80000, webgpu: false, starCount: 'high',
     sphereSegments: 64, orbitSegments: 256,
   },
   ultra: {
@@ -61,7 +61,7 @@ export const PRESETS: Record<Preset, PresetConfig> = {
     renderScale: 1.0, textureSize: 2048, ramBudgetMB: 600,
     sunShader: 'shader', sunGranulation: true, sunCorona: true, sunFlares: true,
     atmosphere: true, normalMaps: true, ringsParticles: true,
-    postfx: 'space', webgpu: false, starCount: 'high',
+    postfx: 'space', starLimit: 100000, webgpu: false, starCount: 'high',
     sphereSegments: 96, orbitSegments: 384,
   },
   'ultra-plus': {
@@ -69,7 +69,7 @@ export const PRESETS: Record<Preset, PresetConfig> = {
     renderScale: 1.25, textureSize: 4096, ramBudgetMB: 1024,
     sunShader: 'shader', sunGranulation: true, sunCorona: true, sunFlares: true,
     atmosphere: true, normalMaps: true, ringsParticles: true,
-    postfx: 'space', webgpu: false, starCount: 'max',
+    postfx: 'space', starLimit: 119000, webgpu: false, starCount: 'max',
     sphereSegments: 128, orbitSegments: 512,
   },
   extreme: {
@@ -77,7 +77,7 @@ export const PRESETS: Record<Preset, PresetConfig> = {
     renderScale: 1.5, textureSize: 4096, ramBudgetMB: 2048,
     sunShader: 'shader', sunGranulation: true, sunCorona: true, sunFlares: true,
     atmosphere: true, normalMaps: true, ringsParticles: true,
-    postfx: 'extreme', webgpu: true, starCount: 'max',
+    postfx: 'extreme', starLimit: 200000, webgpu: true, starCount: 'max',
     sphereSegments: 192, orbitSegments: 768,
   },
 };

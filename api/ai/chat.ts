@@ -1,12 +1,10 @@
 import { streamAIChat, createKeyState } from '../shared/aiHandler.js';
-import { fetchTTS } from '../shared/ttsHandler.js';
 
 const state = createKeyState();
 
 interface Req {
   method?: string;
   body?: unknown;
-  url?: string;
 }
 
 interface Res {
@@ -18,43 +16,6 @@ interface Res {
 }
 
 export default async function handler(req: Req, res: Res) {
-  const isTTS = req.url?.includes('/tts');
-
-  if (isTTS) {
-    // TTS handler
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
-    if (req.method !== 'POST') {
-      res.status(405).end();
-      return;
-    }
-
-    try {
-      const body = (
-        typeof req.body === 'string' ? JSON.parse(req.body) : req.body
-      ) as { text?: string; lang?: string };
-
-      if (!body.text) {
-        res.status(400).end(JSON.stringify({ error: 'text yo`q' }));
-        return;
-      }
-
-      const buf = await fetchTTS(body.text, body.lang ?? 'uz');
-      if (!buf) {
-        res.status(503).end(JSON.stringify({ error: 'TTS ishlamadi' }));
-        return;
-      }
-
-      res.setHeader('Content-Type', 'audio/mpeg');
-      res.setHeader('Cache-Control', 'public, max-age=3600');
-      res.end(buf);
-    } catch (e) {
-      res.status(500).end(JSON.stringify({ error: String(e) }));
-    }
-    return;
-  }
-
-  // AI Chat handler
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');

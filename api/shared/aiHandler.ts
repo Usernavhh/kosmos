@@ -38,6 +38,13 @@ const GROQ_MODELS = [
 const TIMEOUT_MS = 10_000;
 const VALIDATE_TIMEOUT_MS = 4_000;
 
+interface GroqKeyState {
+  key: string;
+  cooldownUntil: number;
+  usageCount: number;
+  lastUsed: number;
+}
+
 interface KeyState {
   keys: string[];
   working: Set<number>;
@@ -45,6 +52,8 @@ interface KeyState {
   workingGeminiModel?: string;
   workingGroqModel?: string;
   groqCooldownUntil: number;
+  groqKeys: GroqKeyState[];
+  groqRoundRobin: number;
   validated: boolean;
   validationPromise?: Promise<void>;
 }
@@ -58,17 +67,53 @@ function readGeminiKeys(): string[] {
   return keys;
 }
 
+function readGroqKeys(): GroqKeyState[] {
+  const keys: GroqKeyState[] = [];
+  for (let i = 1; i <= 3; i++) {
+    const k = process.env[`GROQ_KEY${i === 1 ? '' : `_${i}`}`];
+    if (k && k.length > 10) {
+      keys.push({
+        key: k.trim(),
+        cooldownUntil: 0,
+        usageCount: 0,
+        lastUsed: 0,
+      });
+    }
+  }
+  return keys;
+}
+
 export function createKeyState(): KeyState {
   const keys = readGeminiKeys();
+  const groqKeys = readGroqKeys();
   console.log(`[ai] Gemini kalitlar: ${keys.length} ta`);
+  console.log(`[ai] Groq kalitlar: ${groqKeys.length} ta`);
 
   const state: KeyState = {
     keys,
     working: new Set(),
     cooldown: new Map(),
     groqCooldownUntil: 0,
+    groqKeys,
+    groqRoundRobin: 0,
     validated: false,
   };
+
+  (globalThis as typeof globalThis & {
+    __kosmos_groq_status?: () => {
+      total: number;
+      available: number;
+      cooldowns: { prefix: string; wait: number; uses: number }[];
+    };
+  }).__kosmos_groq_status = () => ({
+    total: state.groqKeys.length,
+    available: state.groqKeys.filter((k) => k.cooldownUntil <= Date.now()).length,
+    cooldowns: state.groqKeys.map((k) => ({
+      prefix: k.key.slice(0, 8),
+      wait: Math.max(0, k.cooldownUntil - Date.now()),
+      uses: k.usageCount,
+    })),
+  });
 
   state.validationPromise = validateKeysInBackground(state);
   return state;
@@ -494,101 +539,133 @@ async function streamGroq(
   input: ChatInput,
   onChunk: (text: string) => void,
 ): Promise<{ ok: boolean; reason?: ErrorKind }> {
-  const groqKey = process.env.GROQ_KEY;
-  if (!groqKey) return { ok: false };
+  if (state.groqKeys.length === 0) {
+    console.warn("[ai] Groq kalit yo'q");
+    return { ok: false };
+  }
 
-  // Agar cooldown'da bo'lsa — o'tkazib yuboramiz
-  if (state.groqCooldownUntil > Date.now()) {
+  const now = Date.now();
+  const available = state.groqKeys.filter((k) => k.cooldownUntil <= now);
+
+  if (available.length === 0) {
+    const minWait = Math.min(...state.groqKeys.map((k) => Math.max(0, k.cooldownUntil - now)));
+    console.warn(
+      `[ai] 🚫 Barcha Groq kalitlar cooldown'da. ` +
+      `Eng yaqin: ${Math.ceil(minWait / 1000)} sekund`,
+    );
     return { ok: false, reason: 'groq_rate_limit' };
   }
 
   const models = state.workingGroqModel
-    ? [state.workingGroqModel]
+    ? [state.workingGroqModel, ...GROQ_MODELS.filter((m) => m !== state.workingGroqModel)]
     : GROQ_MODELS;
 
-  for (const model of models) {
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const sorted = [...available].sort((a, b) => {
+    if (a.usageCount !== b.usageCount) return a.usageCount - b.usageCount;
+    return a.lastUsed - b.lastUsed;
+  });
 
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${groqKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          stream: true,
-          messages: [
-            { role: 'system', content: buildSystemPrompt(input.context ?? '') },
-            ...(input.history ?? []).map((h) => ({ role: h.role, content: h.text })),
-            { role: 'user', content: input.message },
-          ],
-          temperature: 0.85,
-          max_tokens: 800,
-        }),
-        signal: ctrl.signal,
-      });
+  for (const groqKeyState of sorted) {
+    for (const model of models) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
 
-      if (!res.ok) {
-        clearTimeout(t);
-        if (res.status === 429) {
-          // 60 sekund cooldown
-          state.groqCooldownUntil = Date.now() + 60_000;
-          console.warn('[ai] 🚫 Groq rate limit — 60 sekund kutish');
-          return { ok: false, reason: 'groq_rate_limit' };
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${groqKeyState.key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model,
+            stream: true,
+            messages: [
+              { role: 'system', content: buildSystemPrompt(input.context ?? '') },
+              ...(input.history ?? []).map((h) => ({ role: h.role, content: h.text })),
+              { role: 'user', content: input.message },
+            ],
+            temperature: 0.85,
+            max_tokens: 800,
+          }),
+          signal: ctrl.signal,
+        });
+
+        if (!res.ok) {
+          clearTimeout(t);
+
+          if (res.status === 429) {
+            groqKeyState.cooldownUntil = Date.now() + 65_000;
+            console.warn(
+              `[ai] 🔄 Groq kalit (${groqKeyState.key.slice(0, 8)}...) limit → 65 sek cooldown`,
+            );
+            continue;
+          }
+
+          if (res.status === 404) continue;
+          console.warn(`[ai] Groq ${res.status}`);
+          return { ok: false };
         }
-        if (res.status === 404) continue;
-        return { ok: false };
-      }
 
-      const reader = res.body?.getReader();
-      if (!reader) {
-        clearTimeout(t);
-        return { ok: false };
-      }
+        const reader = res.body?.getReader();
+        if (!reader) {
+          clearTimeout(t);
+          return { ok: false };
+        }
 
-      const decoder = new TextDecoder();
-      let buf = '';
-      let gotAny = false;
+        const decoder = new TextDecoder();
+        let buf = '';
+        let gotAny = false;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        const lines = buf.split('\n');
-        buf = lines.pop() ?? '';
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const payload = line.slice(6).trim();
-          if (!payload || payload === '[DONE]') continue;
-          try {
-            const json = JSON.parse(payload);
-            const text = json.choices?.[0]?.delta?.content;
-            if (text) {
-              onChunk(text);
-              gotAny = true;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() ?? '';
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const payload = line.slice(6).trim();
+            if (!payload || payload === '[DONE]') continue;
+            try {
+              const json = JSON.parse(payload);
+              const text = json.choices?.[0]?.delta?.content;
+              if (text) {
+                onChunk(text);
+                gotAny = true;
+              }
+            } catch {
+              /* fragment */
             }
-          } catch {
-            /* fragment */
           }
         }
-      }
-      clearTimeout(t);
+        clearTimeout(t);
 
-      if (gotAny) {
-        state.workingGroqModel = model;
-        console.log(`[ai] ✅ groq ${model}`);
-        return { ok: true };
+        if (gotAny) {
+          state.workingGroqModel = model;
+          groqKeyState.usageCount++;
+          groqKeyState.lastUsed = Date.now();
+          console.log(`[ai] ✅ groq ${model} (kalit ${groqKeyState.key.slice(0, 8)}...)`);
+          return { ok: true };
+        }
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          console.warn('[ai] Groq timeout');
+          groqKeyState.cooldownUntil = Date.now() + 20_000;
+          continue;
+        }
+        continue;
       }
-    } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') {
-        console.warn('[ai] Groq timeout');
-        return { ok: false, reason: 'groq_timeout' };
-      }
-      continue;
     }
+  }
+
+  const totalCooldown = state.groqKeys.reduce(
+    (sum, k) => sum + Math.max(0, k.cooldownUntil - Date.now()),
+    0,
+  );
+
+  if (totalCooldown > 0) {
+    return { ok: false, reason: 'groq_rate_limit' };
   }
 
   return { ok: false };

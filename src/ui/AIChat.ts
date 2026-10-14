@@ -334,9 +334,9 @@ export class AIChat {
       const pinBtn = document.createElement('button');
       pinBtn.className = 'ai-chat-item-btn';
       pinBtn.textContent = c.pinned ? '📌' : '📍';
-      pinBtn.addEventListener('click', (e) => {
+      pinBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const r = this.guide.chats.togglePin(c.id);
+        const r = await this.guide.chats.togglePin(c.id);
         if (!r.ok && r.reason) alert(r.reason);
         this.renderSidebar();
       });
@@ -345,10 +345,10 @@ export class AIChat {
       const delBtn = document.createElement('button');
       delBtn.className = 'ai-chat-item-btn';
       delBtn.textContent = '🗑';
-      delBtn.addEventListener('click', (e) => {
+      delBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (confirm(`"${c.title}" o'chirilsinmi?`)) {
-          this.guide.chats.delete(c.id);
+          await this.guide.chats.delete(c.id);
           this.loadCurrentChat();
           this.renderSidebar();
         }
@@ -366,9 +366,9 @@ export class AIChat {
     }
   }
 
-  private newChat() {
+  private async newChat() {
     const before = this.guide.chats.getCurrent();
-    const c = this.guide.chats.createNew();
+    const c = await this.guide.chats.createNew();
     if (before && c.id === before.id) {
       this.toggleSidebar();
       return;

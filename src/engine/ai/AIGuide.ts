@@ -62,10 +62,10 @@ export class AIGuide {
       const fullContext = [userContext, factsContext].filter(Boolean).join('\n\n');
       const history = this.chats.getRecentForContext(chat.id, 6);
 
-      this.chats.addMessage(chat.id, 'user', message);
+      await this.chats.addMessage(chat.id, 'user', message);
 
       if (chat.messages.length === 1 || chat.title === 'Yangi suhbat') {
-        this.chats.updateTitle(chat.id, message);
+        await this.chats.updateTitle(chat.id, message);
       }
 
       const res = await fetch('/api/ai/chat', {
@@ -110,7 +110,7 @@ export class AIGuide {
 
       if (errorMsg && !fullText) throw new Error(errorMsg);
 
-      this.chats.addMessage(chat.id, 'assistant', fullText);
+      await this.chats.addMessage(chat.id, 'assistant', fullText);
       this.voice?.flushPending();
 
       return fullText;
@@ -134,6 +134,11 @@ export class AIGuide {
           if (this.memory.getName() !== name) {
             this.memory.setName(name);
             console.log(`[ai] Ism: ${name}`);
+
+            const authSync = (window as unknown as {
+              __kosmos_auth_sync_name?: (name: string) => void;
+            }).__kosmos_auth_sync_name;
+            if (authSync) authSync(name);
           }
           return;
         }

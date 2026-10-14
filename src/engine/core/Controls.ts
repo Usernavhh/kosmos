@@ -54,11 +54,14 @@ export class Controls {
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
+    const code = e?.code ?? '';
+    if (!code) return;
+
     // Arrow tugmalari brauzer scroll qilmasin
-    if (e.code.startsWith('Arrow')) e.preventDefault();
+    if (code.startsWith('Arrow')) e.preventDefault();
 
     // Z — turbo selektorni ochish
-    if (e.code === 'KeyZ' && !e.repeat) {
+    if (code === 'KeyZ' && !e.repeat) {
       this.turboSelecting = true;
       this.turboSelectedIndex = this.turboIndex;
       this.callbacks.onTurboShow?.(this.turboSelectedIndex);
@@ -66,11 +69,11 @@ export class Controls {
 
     // Turbo tanlash paytida ← → navigatsiya
     if (this.turboSelecting) {
-      if (e.code === 'ArrowLeft' && !e.repeat) {
+      if (code === 'ArrowLeft' && !e.repeat) {
         this.turboSelectedIndex = Math.max(0, this.turboSelectedIndex - 1);
         this.callbacks.onTurboSelect?.(this.turboSelectedIndex);
       }
-      if (e.code === 'ArrowRight' && !e.repeat) {
+      if (code === 'ArrowRight' && !e.repeat) {
         this.turboSelectedIndex = Math.min(
           TURBO_LEVELS.length - 1,
           this.turboSelectedIndex + 1,
@@ -79,11 +82,14 @@ export class Controls {
       }
     }
 
-    this.keys.add(e.code);
+    this.keys.add(code);
   };
 
   private onKeyUp = (e: KeyboardEvent) => {
-    if (e.code === 'KeyZ' && this.turboSelecting) {
+    const code = e?.code ?? '';
+    if (!code) return;
+
+    if (code === 'KeyZ' && this.turboSelecting) {
       this.turboSelecting = false;
       this.turboIndex = this.turboSelectedIndex;
       this.callbacks.onTurboHide?.(this.turboIndex);
@@ -91,7 +97,7 @@ export class Controls {
         `[controls] Turbo qabul qilindi: ${TURBO_LEVELS[this.turboIndex].name} (×${TURBO_LEVELS[this.turboIndex].mult})`,
       );
     }
-    this.keys.delete(e.code);
+    this.keys.delete(code);
   };
 
   private onMouseDown = (e: MouseEvent) => {

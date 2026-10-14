@@ -20,11 +20,17 @@ import { TOURS } from './data/tours';
 import { AIGuide } from './engine/ai/AIGuide';
 import { AIVoice } from './engine/ai/AIVoice';
 import { AudioManager } from './engine/audio/AudioManager';
+import { AuthManager } from './engine/auth/AuthManager';
 import { PhotoMode } from './engine/effects/PhotoMode';
 import { GravitySandbox } from './engine/games/GravitySandbox';
 import { PLANETS_META } from './engine/scene/Planets';
+import { AuthUI } from './ui/AuthUI';
 
 const params = new URLSearchParams(location.search);
+if (!params.has('stats')) {
+  params.set('stats', '1');
+}
+
 const container = document.getElementById('app');
 if (!container) throw new Error('#app topilmadi');
 
@@ -173,6 +179,61 @@ const controlPanel = new ControlPanel({
   onPhotoToggle: () => photoMode.toggle(),
   onSettingsOpen: () => settingsPanel.toggle(),
   onSchoolOpen: () => schoolPanel.toggle(),
+});
+
+// ═══ SUPABASE AUTH ═══
+const authManager = new AuthManager();
+const authUI = new AuthUI(authManager);
+
+// Auth ni ishga tushirish
+authManager.init().then(() => {
+  console.log('[auth] Tayyor');
+});
+
+// Global sync function — AIGuide Supabase'ga yozishi uchun
+(window as unknown as {
+  __kosmos_auth_sync_name?: (name: string) => void;
+}).__kosmos_auth_sync_name = async (name: string) => {
+  if (authManager.isLoggedIn()) {
+    try {
+      await authManager.updateProfile({ name });
+      console.log(`[auth] Supabase'ga yozildi: ${name}`);
+    } catch (e) {
+      console.warn('[auth] Sync xato:', e);
+    }
+  }
+};
+
+authManager.onChange(async (user, profile) => {
+  if (user) {
+    if (profile?.name) {
+      guide.setName(profile.name);
+      console.log(`[auth] AI endi "${profile.name}" ni biladi`);
+    }
+    // ChatStore'ga user'ni berish — bulutdan yuklash
+    await guide.chats.setUser(user.id);
+    // Sahifani yangilash — chat ro'yxati yangilansin
+    if (aiChat.isOpen()) {
+      // @ts-expect-error private
+      aiChat.loadCurrentChat?.();
+    }
+  } else {
+    await guide.chats.setUser(null);
+    console.log('[auth] Anonim rejim');
+  }
+});
+
+// Auth UI klaviatura tugmasi
+window.addEventListener('keydown', (e) => {
+  const target = e.target as HTMLElement;
+  const isInput =
+    target.tagName === 'INPUT' ||
+    target.tagName === 'TEXTAREA' ||
+    target.isContentEditable;
+  if (e.code === 'KeyU' && e.shiftKey && !isInput) {
+    e.preventDefault();
+    if (!authManager.isLoggedIn()) authUI.toggle('login');
+  }
 });
 
 setTimeout(() => guide.warmup(), 3000);

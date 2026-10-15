@@ -70,6 +70,32 @@ export class AuthUI {
       return;
     }
 
+    // ═══ Tashqariga bosganda yopish ═══
+    const closeOnOutsideClick = (e: MouseEvent) => {
+      const menu = document.getElementById('auth-profile-menu');
+      const btn = document.getElementById('auth-float-btn');
+      if (!menu) return;
+      if (menu.contains(e.target as Node)) return;
+      if (btn && btn.contains(e.target as Node)) return;
+      menu.remove();
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEsc);
+    };
+
+    const closeOnEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        document.getElementById('auth-profile-menu')?.remove();
+        document.removeEventListener('mousedown', closeOnOutsideClick);
+        document.removeEventListener('keydown', closeOnEsc);
+      }
+    };
+
+    // 50ms kechiktirib qo‘shamiz (tugma bosishni ham ushlamasin)
+    setTimeout(() => {
+      document.addEventListener('mousedown', closeOnOutsideClick);
+      document.addEventListener('keydown', closeOnEsc);
+    }, 100);
+
     const profile = this.auth.getProfile();
     const user = this.auth.getUser();
 

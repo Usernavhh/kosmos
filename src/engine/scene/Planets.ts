@@ -3,6 +3,8 @@ import { Body, HelioVector, GeoMoon, MakeTime } from 'astronomy-engine';
 import type { PresetConfig } from '../core/QualityManager';
 import type { MemoryTracker } from '../core/MemoryTracker';
 import { createSun, type SunHandle } from './Sun';
+import { createCityMarkers, type CityMarkersHandle } from './CityMarkers';
+import { createEarthInterior, type EarthInteriorHandle } from './EarthInterior';
 
 export const AU_SCALE = 5000;
 
@@ -133,6 +135,7 @@ function loadTexture(
 export function createPlanets(
   config: PresetConfig,
   memory: MemoryTracker,
+  camera: THREE.PerspectiveCamera,
 ): PlanetsHandle {
   const group = new THREE.Group();
   const loader = new THREE.TextureLoader();
@@ -188,6 +191,8 @@ export function createPlanets(
 
   // ═══ Sayyoralar ═══
   let earthMesh: THREE.Mesh | null = null;
+  let cityMarkers: CityMarkersHandle | null = null;
+  let earthInterior: EarthInteriorHandle | null = null;
 
   for (const def of PLANETS_META) {
     const geom = new THREE.SphereGeometry(def.radius, seg, segHalf);
@@ -198,6 +203,12 @@ export function createPlanets(
     if (def.body === Body.Earth) {
       mesh = new THREE.Mesh(geom, earthMat);
       earthMesh = mesh;
+
+      cityMarkers = createCityMarkers();
+      group.add(cityMarkers.group);
+
+      earthInterior = createEarthInterior();
+      group.add(earthInterior.group);
     } else {
       // def.texture dan fayl nomini olish
       const filename = def.texture.split('/').pop() ?? def.texture;
@@ -335,6 +346,15 @@ export function createPlanets(
       const dir = new THREE.Vector3(mv.x, mv.z, -mv.y).normalize();
       earthMoon.position.copy(earthMesh.position).addScaledVector(dir, MOON_DISTANCE);
       earthMoon.rotation.y += 0.005;
+    }
+
+    // City markers (Yerga yaqinlashganda)
+    if (cityMarkers && earthMesh) {
+      cityMarkers.update(camera, earthMesh.position);
+    }
+
+    if (earthInterior && earthMesh) {
+      earthInterior.update(camera, earthMesh.position);
     }
 
     const daysSinceJ2000 = (date.getTime() - Date.UTC(2000, 0, 1, 12)) / 86400_000;

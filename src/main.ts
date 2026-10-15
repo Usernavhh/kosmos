@@ -25,6 +25,8 @@ import { PhotoMode } from './engine/effects/PhotoMode';
 import { GravitySandbox } from './engine/games/GravitySandbox';
 import { PLANETS_META } from './engine/scene/Planets';
 import { AuthUI } from './ui/AuthUI';
+import { FooterInfo } from './ui/FooterInfo';
+import { ScreenControls } from './ui/ScreenControls';
 
 const params = new URLSearchParams(location.search);
 if (!params.has('stats')) {
@@ -185,6 +187,11 @@ const controlPanel = new ControlPanel({
 const authManager = new AuthManager();
 const authUI = new AuthUI(authManager);
 
+// AIChat uchun global auth funksiya
+(window as unknown as {
+  __kosmos_open_auth?: () => void;
+}).__kosmos_open_auth = () => authUI.toggle('login');
+
 // Auth ni ishga tushirish
 authManager.init().then(() => {
   console.log('[auth] Tayyor');
@@ -222,6 +229,14 @@ authManager.onChange(async (user, profile) => {
     console.log('[auth] Anonim rejim');
   }
 });
+
+// Info badge
+const footerInfo = new FooterInfo();
+void footerInfo;
+
+// Screen controls (fullscreen + panel toggle)
+const screenControls = new ScreenControls();
+void screenControls;
 
 // Auth UI klaviatura tugmasi
 window.addEventListener('keydown', (e) => {
@@ -367,6 +382,8 @@ function loop(now: number) {
   guide.setContext({
     distanceFromCenter: sceneHandle.getDistance(),
     currentTime: sceneHandle.time.format(),
+    currentPlanet: sceneHandle.getCurrentTarget() ?? undefined,
+    sceneInfo: () => sceneHandle.getSceneInfo(),
   });
 
   const dist = sceneHandle.getDistance();

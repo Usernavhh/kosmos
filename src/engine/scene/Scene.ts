@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Body } from 'astronomy-engine';
 import { loadStars, type Star } from '../../data/stars';
 import {
   loadStarNames,
@@ -27,6 +28,16 @@ import type { PlanetInfo } from '../../ui/PlanetInfo';
 import type { StarInfo } from '../../ui/StarInfo';
 import type { SatInfo } from '../../ui/SatInfo';
 
+export interface SceneInfo {
+  nearestPlanet: { name: string; distanceAU: number } | null;
+  distanceFromSunAU: number;
+  distanceFromEarthAU: number | null;
+  distanceFromSgrALy: number | null;
+  cameraForward: { x: number; y: number; z: number };
+  region: 'solar-system' | 'near-space' | 'galactic' | 'intergalactic';
+  isLost: boolean;
+}
+
 export interface SceneHandle {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
@@ -34,6 +45,8 @@ export interface SceneHandle {
   time: TimeManager;
   tours: TourManager;
   getDistance(): number;
+  getCurrentTarget(): string | null;
+  getSceneInfo(): SceneInfo;
   getSpeed(): number;
   resize(width: number, height: number): void;
   update(dt: number): void;
@@ -81,7 +94,7 @@ export function createScene(
 
   let currentIndex: number | null = null;
 
-  const planets = createPlanets(config, memory);
+  const planets = createPlanets(config, memory, camera);
   scene.add(planets.group);
 
   const asteroids: AsteroidsHandle = createAsteroids();
@@ -296,6 +309,76 @@ export function createScene(
 
     getDistance() {
       return floatingOrigin.getTotalDistance(camera.position);
+    },
+    getCurrentTarget() {
+      const camPos = camera.position;
+      const groupPos = planets.group.position;
+
+      let nearest: { name: string; dist: number } | null = null;
+
+      for (const meta of PLANETS_META) {
+        const localPos = planets.getPosition(meta.body);
+        if (!localPos) continue;
+        const worldPos = localPos.clone().add(groupPos);
+        const d = camPos.distanceTo(worldPos);
+        if (!nearest || d < nearest.dist) {
+          nearest = { name: meta.name, dist: d };
+        }
+      }
+
+      return nearest?.name ?? null;
+    },
+    getSceneInfo(): SceneInfo {
+      const AU_SCALE = 5000;
+      const SCENE_PER_LY = 153374;
+      const camPos = camera.position.clone();
+      const groupPos = planets.group.position;
+
+      const distSunUnits = camPos.distanceTo(groupPos);
+      const distanceFromSunAU = distSunUnits / AU_SCALE;
+
+      let nearestPlanet: { name: string; distanceAU: number } | null = null;
+      let minDist = Infinity;
+
+      for (const meta of PLANETS_META) {
+        const localPos = planets.getPosition(meta.body);
+        if (!localPos) continue;
+        const worldPos = localPos.clone().add(groupPos);
+        const d = camPos.distanceTo(worldPos);
+        if (d < minDist) {
+          minDist = d;
+          nearestPlanet = { name: meta.name, distanceAU: d / AU_SCALE };
+        }
+      }
+
+      const earthPos = planets.getPosition(Body.Earth);
+      const distanceFromEarthAU = earthPos
+        ? camPos.distanceTo(earthPos.clone().add(groupPos)) / AU_SCALE
+        : null;
+
+      const sgrAPos = galaxies.sgrAPosition.clone();
+      const distanceFromSgrALy = camPos.distanceTo(sgrAPos) / SCENE_PER_LY;
+
+      let region: SceneInfo['region'] = 'solar-system';
+      if (distSunUnits > 5e5) region = 'near-space';
+      if (distSunUnits > 5e8) region = 'galactic';
+      if (distSunUnits > 5e11) region = 'intergalactic';
+
+      const reallyNearPlanet = nearestPlanet && nearestPlanet.distanceAU < 200 ? nearestPlanet : null;
+      const isLost = distSunUnits > 200 && !reallyNearPlanet;
+
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+
+      return {
+        nearestPlanet: reallyNearPlanet,
+        distanceFromSunAU,
+        distanceFromEarthAU,
+        distanceFromSgrALy,
+        cameraForward: { x: forward.x, y: forward.y, z: forward.z },
+        region,
+        isLost,
+      };
     },
     getSpeed() { return currentSpeed; },
 

@@ -33,6 +33,7 @@ export default async function handler(req: Req, res: Res) {
       message?: string;
       context?: string;
       history?: { role: 'user' | 'assistant'; text: string }[];
+      mode?: 'standard' | 'pro' | 'expert';
     };
 
     if (!body.message) {
@@ -47,6 +48,7 @@ export default async function handler(req: Req, res: Res) {
         message: body.message,
         context: body.context ?? '',
         history: body.history ?? [],
+        mode: body.mode ?? 'standard',
       },
       (text) => res.write(`data: ${JSON.stringify({ text })}\n\n`),
       (provider) => {

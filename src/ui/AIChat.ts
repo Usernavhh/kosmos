@@ -31,6 +31,7 @@ export class AIChat {
         <button class="ai-hdr-btn ai-hamburger" title="Chatlar">☰</button>
         <span class="ai-title">KOSMOS AI</span>
         <div class="ai-header-actions">
+          <button class="ai-hdr-btn ai-mode-btn" title="AI rejimi">💬</button>
           <button class="ai-hdr-btn ai-brain" title="AI xotirasi">🧠</button>
           <button class="ai-hdr-btn ai-voice-btn" title="Ovoz tanlash">🎙</button>
           <button class="ai-hdr-btn ai-tts" title="Ovozli o'qish">🔇</button>
@@ -103,6 +104,13 @@ export class AIChat {
         this.showFacts();
       },
     );
+    (this.el.querySelector('.ai-mode-btn') as HTMLButtonElement).addEventListener(
+      'click',
+      (e) => {
+        e.stopPropagation();
+        this.toggleModePicker();
+      },
+    );
 
     this.inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -113,6 +121,7 @@ export class AIChat {
     });
 
     this.updateTTSBtn();
+    this.updateModeBtn();
     this.updateHeader();
     this.loadCurrentChat();
 
@@ -173,6 +182,63 @@ export class AIChat {
     const on = this.voice.isTTSEnabled();
     this.ttsBtn.classList.toggle('cp-active', on);
     this.ttsBtn.textContent = on ? '🔊' : '🔇';
+  }
+
+  private updateModeBtn() {
+    const btn = this.el.querySelector('.ai-mode-btn') as HTMLButtonElement;
+    if (!btn) return;
+    const icons = { standard: '💬', pro: '🧠', expert: '🎓' } as const;
+    btn.textContent = icons[this.guide.mode];
+  }
+
+  private toggleModePicker() {
+    const existing = document.querySelector('.ai-mode-picker');
+    if (existing) {
+      existing.remove();
+      return;
+    }
+
+    const picker = document.createElement('div');
+    picker.className = 'ai-mode-picker';
+
+    const modes = ['standard', 'pro', 'expert'] as const;
+    const icons = { standard: '💬', pro: '🧠', expert: '🎓' } as const;
+    const labels = { standard: 'Standart', pro: 'Pro', expert: 'Ekspert' } as const;
+    const descs = {
+      standard: 'Tez javob, oddiy savollar',
+      pro: "Chuqur o'ylash, formulalar",
+      expert: 'Ilmiy aniqlik, olimpiada',
+    } as const;
+
+    picker.innerHTML = `
+      <div class="ai-mode-title">AI REJIMI</div>
+      <div class="ai-mode-list">
+        ${modes
+          .map(
+            (m) => `
+          <div class="ai-mode-item ${this.guide.mode === m ? 'active' : ''}" data-mode="${m}">
+            <div class="ai-mode-icon">${icons[m]}</div>
+            <div class="ai-mode-info">
+              <div class="ai-mode-name">${labels[m]}</div>
+              <div class="ai-mode-desc">${descs[m]}</div>
+            </div>
+          </div>
+        `,
+          )
+          .join('')}
+      </div>
+    `;
+
+    this.el.appendChild(picker);
+
+    picker.querySelectorAll('.ai-mode-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const mode = (item as HTMLElement).dataset.mode as 'standard' | 'pro' | 'expert';
+        this.guide.setMode(mode);
+        this.updateModeBtn();
+        picker.remove();
+      });
+    });
   }
 
   private toggleTTS() {
@@ -448,8 +514,27 @@ export class AIChat {
       this.updateHeader();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      replyEl.textContent = msg;
       replyEl.classList.remove('ai-msg-streaming');
+
+      if (msg === 'SIGN_IN_REQUIRED') {
+        replyEl.innerHTML = `
+          <div class="ai-signin-box">
+            <div class="ai-signin-title">AI giddan foydalanish uchun akkauntga kiring</div>
+            <button class="ai-signin-btn">Kirish / Ro'yxatdan o'tish</button>
+          </div>
+        `;
+
+        const btn = replyEl.querySelector('.ai-signin-btn') as HTMLButtonElement;
+        btn.addEventListener('click', () => {
+          const fn = (window as unknown as {
+            __kosmos_open_auth?: () => void;
+          }).__kosmos_open_auth;
+          fn?.();
+        });
+        return;
+      }
+
+      replyEl.textContent = msg;
       if (/limit|kuting|band/i.test(msg)) {
         replyEl.classList.add('ai-msg-warn');
       } else {
